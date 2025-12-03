@@ -1,0 +1,57 @@
+# Inference Configuration
+
+# Model Loading
+model:
+  checkpoint_path: "experiments/checkpoints/best_model.pth"
+  device: "cuda"  # cuda, cpu, or auto
+  precision: "fp16"  # fp32, fp16, or int8
+  
+# Input Processing
+input:
+  modalities: ["T1", "T1ce", "T2", "FLAIR"]
+  normalization: "zscore"  # zscore, minmax, or none
+  resample_to: [128, 128, 128]  # Target resolution
+  
+# Post-processing
+postprocessing:
+  threshold: 0.5
+  min_volume: 100  # Minimum volume in voxels
+  connected_components: true
+  smoothing: true
+  smoothing_sigma: 1.0
+  
+# Output Configuration
+output:
+  save_masks: true
+  save_probabilities: false
+  save_3d_mesh: true
+  mesh_format: "gltf"  # gltf, obj, or ply
+  mesh_resolution: 0.5
+  
+# JSON Mapping
+json_mapping:
+  atlas: "aal"  # aal, brodmann, or custom
+  include_statistics: true
+  include_volumes: true
+  include_coordinates: true
+  
+# Report Generation
+report:
+  generate_report: true
+  template: "standard"  # standard, detailed, or custom
+  include_visualizations: true
+  export_formats: ["pdf", "json"]
+  
+# Performance
+performance:
+  batch_size: 1
+  num_workers: 2
+  use_amp: true  # Automatic Mixed Precision
+  
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  timeout: 300
+

@@ -1,0 +1,66 @@
+# Training Configuration for MoME+ Model
+
+# Dataset Configuration
+dataset:
+  name: "BraTS2021"
+  data_dir: "data/processed"
+  modalities: ["T1", "T1ce", "T2", "FLAIR"]
+  num_classes: 3  # WT, TC, ET
+  class_names: ["Whole Tumor", "Tumor Core", "Enhancing Tumor"]
+  
+# Data Loading
+data_loader:
+  batch_size: 2
+  num_workers: 4
+  pin_memory: true
+  shuffle: true
+  drop_last: true
+
+# Training Parameters
+training:
+  epochs: 100
+  learning_rate: 1e-4
+  weight_decay: 1e-5
+  gradient_clip_norm: 1.0
+  
+# Optimizer
+optimizer:
+  type: "AdamW"
+  lr: 1e-4
+  weight_decay: 1e-5
+  betas: [0.9, 0.999]
+  eps: 1e-8
+
+# Scheduler
+scheduler:
+  type: "CosineAnnealingLR"
+  T_max: 100
+  eta_min: 1e-6
+
+# Loss Configuration
+loss:
+  dice_weight: 1.0
+  ce_weight: 1.0
+  focal_weight: 0.5
+  focal_alpha: 0.25
+  focal_gamma: 2.0
+
+# Validation
+validation:
+  frequency: 5  # Validate every N epochs
+  save_best: true
+  metric: "dice_score"
+
+# Checkpointing
+checkpoint:
+  save_dir: "experiments/checkpoints"
+  save_frequency: 10
+  keep_last_n: 5
+
+# Logging
+logging:
+  log_dir: "experiments/logs"
+  log_frequency: 100  # Log every N steps
+  use_tensorboard: true
+  use_wandb: false
+

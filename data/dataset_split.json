@@ -1,0 +1,83 @@
+{
+  "description": "Dataset split configuration for MoME+ training",
+  "version": "1.0",
+  "datasets": {
+    "BraTS2021": {
+      "total_cases": 1251,
+      "train": {
+        "cases": 1000,
+        "percentage": 80.0,
+        "case_ids": []
+      },
+      "val": {
+        "cases": 125,
+        "percentage": 10.0,
+        "case_ids": []
+      },
+      "test": {
+        "cases": 126,
+        "percentage": 10.0,
+        "case_ids": []
+      }
+    },
+    "OASIS": {
+      "total_cases": 416,
+      "train": {
+        "cases": 333,
+        "percentage": 80.0,
+        "case_ids": []
+      },
+      "val": {
+        "cases": 42,
+        "percentage": 10.0,
+        "case_ids": []
+      },
+      "test": {
+        "cases": 41,
+        "percentage": 10.0,
+        "case_ids": []
+      }
+    },
+    "ISLES": {
+      "total_cases": 94,
+      "train": {
+        "cases": 75,
+        "percentage": 80.0,
+        "case_ids": []
+      },
+      "val": {
+        "cases": 9,
+        "percentage": 10.0,
+        "case_ids": []
+      },
+      "test": {
+        "cases": 10,
+        "percentage": 10.0,
+        "case_ids": []
+      }
+    }
+  },
+  "continual_learning": {
+    "task_order": ["BraTS2021", "OASIS", "ISLES"],
+    "task_splits": {
+      "task_1": {
+        "dataset": "BraTS2021",
+        "split": "train"
+      },
+      "task_2": {
+        "dataset": "OASIS",
+        "split": "train"
+      },
+      "task_3": {
+        "dataset": "ISLES",
+        "split": "train"
+      }
+    }
+  },
+  "notes": [
+    "Case IDs will be populated during preprocessing",
+    "Split percentages are approximate and may vary based on available data",
+    "Continual learning tasks follow the specified order"
+  ]
+}
+
