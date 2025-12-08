@@ -7,19 +7,16 @@ of multi-modal MRI data for training and inference.
 
 import os
 import json
-import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Union
-
+from typing import Dict, List, Tuple, Optional
 import numpy as np
-import nibabel as nib
+from monai.data import Dataset, DataLoader
 from monai.transforms import (
-    Compose, LoadImaged, AddChanneld, Spacingd, Orientationd,
+    Compose, LoadImaged, Spacingd, Orientationd,
     ScaleIntensityRanged, CropForegroundd, RandSpatialCropd,
     RandFlipd, RandRotate90d, RandGaussianNoised, RandGaussianSmoothd,
     ToTensord, EnsureChannelFirstd
 )
-from monai.data import Dataset, DataLoader
 import torch
 
 from .utils import load_nifti, save_nifti, normalize_volume
@@ -63,7 +60,7 @@ class DataPreprocessor:
         if mode == "train":
             transforms = Compose([
                 LoadImaged(keys=keys),
-                AddChanneld(keys=keys),
+                EnsureChannelFirstd(keys=keys),
                 Spacingd(keys=keys, pixdim=self.target_spacing, mode="bilinear"),
                 Orientationd(keys=keys, axcodes="RAS"),
                 ScaleIntensityRanged(keys=keys, a_min=0, a_max=1000, b_min=0, b_max=1, clip=True),
@@ -80,7 +77,7 @@ class DataPreprocessor:
         else:
             transforms = Compose([
                 LoadImaged(keys=keys),
-                AddChanneld(keys=keys),
+                EnsureChannelFirstd(keys=keys),
                 Spacingd(keys=keys, pixdim=self.target_spacing, mode="bilinear"),
                 Orientationd(keys=keys, axcodes="RAS"),
                 ScaleIntensityRanged(keys=keys, a_min=0, a_max=1000, b_min=0, b_max=1, clip=True),
@@ -94,7 +91,8 @@ class DataPreprocessor:
                           input_dir: str, 
                           output_dir: str,
                           dataset_name: str,
-                          split_ratio: Tuple[float, float, float] = (0.8, 0.1, 0.1)) -> None:
+                          split_ratio: Tuple[float, float, float] = (0.8, 0.1, 0.1),
+                          split_only: bool = False) -> None:
         """
         Preprocess an entire dataset and split into train/val/test.
         
@@ -103,8 +101,9 @@ class DataPreprocessor:
             output_dir: Path to save processed data
             dataset_name: Name of the dataset (BraTS2021, OASIS, ISLES)
             split_ratio: Train/val/test split ratios
+            split_only: If True, only generate split file without processing data
         """
-        logger.info(f"Preprocessing {dataset_name} dataset...")
+        logger.info(f"Preprocessing {dataset_name} dataset... (Split only: {split_only})")
         
         # Find all case directories
         case_dirs = self._find_case_directories(input_dir, dataset_name)
@@ -113,9 +112,10 @@ class DataPreprocessor:
         # Split cases
         train_cases, val_cases, test_cases = self._split_cases(case_dirs, split_ratio)
         
-        # Process each split
-        for split_name, cases in [("train", train_cases), ("val", val_cases), ("test", test_cases)]:
-            self._process_split(cases, output_dir, split_name, dataset_name)
+        if not split_only:
+            # Process each split
+            for split_name, cases in [("train", train_cases), ("val", val_cases), ("test", test_cases)]:
+                self._process_split(cases, output_dir, split_name, dataset_name)
             
         # Save split information
         self._save_split_info(dataset_name, train_cases, val_cases, test_cases, output_dir)
@@ -135,6 +135,9 @@ class DataPreprocessor:
         elif dataset_name == "ISLES":
             # ISLES structure: case_XXX/
             pattern = "case_*"
+        elif dataset_name == "BraTS2024":
+            # BraTS 2024 structure: BraTS-GLI-XXXXX-XXX/ or recursive search
+            pattern = "**/*BraTS-GLI-*"
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
             
@@ -208,6 +211,23 @@ class DataPreprocessor:
             return case_path / f"mpr-1_{modality}.nii.gz"
         elif dataset_name == "ISLES":
             return case_path / f"{modality}.nii.gz"
+        elif dataset_name == "BraTS2024":
+            # Map modalities to BraTS 2024 suffixes
+            # T1 -> t1n, T1ce -> t1c, T2 -> t2w, FLAIR -> t2f
+            suffix_map = {
+                "T1": "t1n",
+                "T1ce": "t1c",
+                "T2": "t2w",
+                "FLAIR": "t2f"
+            }
+            if modality in suffix_map:
+                suffix = suffix_map[modality]
+                # Files are named like BraTS-GLI-00005-100-t1n.nii.gz
+                # We search for the file ending with the suffix
+                files = list(case_path.glob(f"*-{suffix}.nii.gz"))
+                if files:
+                    return files[0]
+            return None
         return None
     
     def _find_mask_file(self, case_path: Path, dataset_name: str) -> Optional[Path]:
@@ -218,6 +238,11 @@ class DataPreprocessor:
             return case_path / "mpr-1_seg.nii.gz"
         elif dataset_name == "ISLES":
             return case_path / "mask.nii.gz"
+        elif dataset_name == "BraTS2024":
+            files = list(case_path.glob("*-seg.nii.gz"))
+            if files:
+                return files[0]
+            return None
         return None
     
     def _save_split_info(self, dataset_name: str, train_cases: List[str], 
@@ -231,6 +256,7 @@ class DataPreprocessor:
             "total_cases": len(train_cases) + len(val_cases) + len(test_cases)
         }
         
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
         output_file = Path(output_dir) / f"{dataset_name}_split.json"
         with open(output_file, 'w') as f:
             json.dump(split_info, f, indent=2)
@@ -246,16 +272,18 @@ def main():
     parser.add_argument("--input_dir", type=str, required=True, help="Input directory")
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset name")
+    parser.add_argument("--split_only", action="store_true", help="Only generate dataset split file")
     
     args = parser.parse_args()
     
     config = load_config(args.config)
-    preprocessor = DataPreprocessor(config["preprocessing"])
+    preprocessor = DataPreprocessor(config.get("preprocessing", {}))
     
     preprocessor.preprocess_dataset(
         args.input_dir, 
         args.output_dir, 
-        args.dataset
+        args.dataset,
+        split_only=args.split_only
     )
 
 

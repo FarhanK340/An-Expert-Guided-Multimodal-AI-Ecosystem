@@ -47,7 +47,7 @@ python-multipart>=0.0.6
 # 3D Visualization
 trimesh>=3.22.0
 pygltflib>=1.15.0
-open3d>=0.17.0
+
 
 # Configuration and Utilities
 PyYAML>=6.0

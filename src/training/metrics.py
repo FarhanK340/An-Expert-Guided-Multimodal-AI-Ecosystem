@@ -39,20 +39,17 @@ class DiceScore:
                 class_wise: bool = True) -> Union[float, Dict[int, float]]:
         """
         Compute Dice score.
-        
-        Args:
-            predictions: Predicted segmentation masks (B, C, D, H, W)
-            targets: Ground truth masks (B, D, H, W)
-            class_wise: Whether to compute class-wise scores
-            
-        Returns:
-            Dice score(s)
         """
-        # Convert targets to one-hot encoding
-        targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
-        
-        # Apply softmax to predictions
-        predictions = F.softmax(predictions, dim=1)
+        # Check for multi-label/one-hot targets
+        if targets.shape == predictions.shape:
+             targets_one_hot = targets.float()
+             # Use Sigmoid for multi-label
+             predictions = torch.sigmoid(predictions)
+        else:
+             # Convert targets to one-hot encoding
+             targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
+             # Use Softmax for multi-class
+             predictions = F.softmax(predictions, dim=1)
         
         # Compute intersection and union
         intersection = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
@@ -75,13 +72,6 @@ class IoUScore:
     def __init__(self, 
                  smooth: float = 1e-6,
                  ignore_index: int = -1):
-        """
-        Initialize IoU score calculator.
-        
-        Args:
-            smooth: Smoothing factor to avoid division by zero
-            ignore_index: Index to ignore in computation
-        """
         self.smooth = smooth
         self.ignore_index = ignore_index
     
@@ -91,20 +81,14 @@ class IoUScore:
                 class_wise: bool = True) -> Union[float, Dict[int, float]]:
         """
         Compute IoU score.
-        
-        Args:
-            predictions: Predicted segmentation masks (B, C, D, H, W)
-            targets: Ground truth masks (B, D, H, W)
-            class_wise: Whether to compute class-wise scores
-            
-        Returns:
-            IoU score(s)
         """
-        # Convert targets to one-hot encoding
-        targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
-        
-        # Apply softmax to predictions
-        predictions = F.softmax(predictions, dim=1)
+        # Check for multi-label/one-hot targets
+        if targets.shape == predictions.shape:
+             targets_one_hot = targets.float()
+             predictions = torch.sigmoid(predictions)
+        else:
+             targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
+             predictions = F.softmax(predictions, dim=1)
         
         # Compute intersection and union
         intersection = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
@@ -127,13 +111,6 @@ class PrecisionRecall:
     def __init__(self, 
                  smooth: float = 1e-6,
                  ignore_index: int = -1):
-        """
-        Initialize precision and recall calculator.
-        
-        Args:
-            smooth: Smoothing factor to avoid division by zero
-            ignore_index: Index to ignore in computation
-        """
         self.smooth = smooth
         self.ignore_index = ignore_index
     
@@ -143,20 +120,14 @@ class PrecisionRecall:
                 class_wise: bool = True) -> Dict[str, Union[float, Dict[int, float]]]:
         """
         Compute precision and recall.
-        
-        Args:
-            predictions: Predicted segmentation masks (B, C, D, H, W)
-            targets: Ground truth masks (B, D, H, W)
-            class_wise: Whether to compute class-wise scores
-            
-        Returns:
-            Dictionary with precision and recall scores
         """
-        # Convert targets to one-hot encoding
-        targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
-        
-        # Apply softmax to predictions
-        predictions = F.softmax(predictions, dim=1)
+        # Check for multi-label/one-hot targets
+        if targets.shape == predictions.shape:
+             targets_one_hot = targets.float()
+             predictions = torch.sigmoid(predictions)
+        else:
+             targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
+             predictions = F.softmax(predictions, dim=1)
         
         # Compute true positives, false positives, and false negatives
         tp = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
@@ -212,17 +183,31 @@ class HausdorffDistance:
         Returns:
             Hausdorff distance(s)
         """
-        # Convert predictions to binary masks
-        predictions = F.softmax(predictions, dim=1)
-        predictions = torch.argmax(predictions, dim=1)
-        
+        # Check for multi-label/one-hot targets
+        if targets.shape == predictions.shape:
+             # Multi-label case (BraTS)
+             # predictions: (B, C, D, H, W), targets: (B, C, D, H, W)
+             num_classes = predictions.size(1)
+             predictions_binary = (torch.sigmoid(predictions) > 0.5).float()
+             targets_binary = targets.float()
+        else:
+             # Multi-class case
+             num_classes = predictions.size(1)
+             predictions = F.softmax(predictions, dim=1)
+             predictions_binary = torch.zeros_like(predictions)
+             predictions_argmax = torch.argmax(predictions, dim=1)
+             for c in range(num_classes):
+                 predictions_binary[:, c] = (predictions_argmax == c).float()
+             
+             targets_binary = F.one_hot(targets, num_classes=num_classes).permute(0, 4, 1, 2, 3).float()
+
         # Compute Hausdorff distance for each class
         hausdorff_distances = {}
         
-        for class_id in range(predictions.size(1)):
+        for class_id in range(num_classes):
             # Get binary masks for this class
-            pred_mask = (predictions == class_id).float()
-            target_mask = (targets == class_id).float()
+            pred_mask = predictions_binary[:, class_id]
+            target_mask = targets_binary[:, class_id]
             
             # Compute Hausdorff distance
             hd = self._compute_hausdorff_distance(pred_mask, target_mask)
@@ -231,7 +216,7 @@ class HausdorffDistance:
         if class_wise:
             return hausdorff_distances
         else:
-            return np.mean(list(hausdorff_distances.values()))
+            return np.mean([v for v in hausdorff_distances.values() if v != float('inf')])
     
     def _compute_hausdorff_distance(self, 
                                   pred_mask: torch.Tensor, 

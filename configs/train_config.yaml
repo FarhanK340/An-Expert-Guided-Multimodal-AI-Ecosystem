@@ -2,16 +2,24 @@
 
 # Dataset Configuration
 dataset:
-  name: "BraTS2021"
+  name: "BraTS2024"
   data_dir: "data/processed"
+  raw_data_dir: "h:/FYP/synapsedownloads/Brats2024/BratsGLI/training_data1_v2"  # Pointing to GLI training data with masks
   modalities: ["T1", "T1ce", "T2", "FLAIR"]
   num_classes: 3  # WT, TC, ET
   class_names: ["Whole Tumor", "Tumor Core", "Enhancing Tumor"]
+
+# Preprocessing
+preprocessing:
+  modalities: ["T1", "T1ce", "T2", "FLAIR"]
+  target_spacing: [1.0, 1.0, 1.0]
+  target_spacing: [1.0, 1.0, 1.0]
+  crop_size: [64, 64, 64]
   
 # Data Loading
 data_loader:
-  batch_size: 2
-  num_workers: 4
+  batch_size: 1
+  num_workers: 2
   pin_memory: true
   shuffle: true
   drop_last: true
@@ -54,7 +62,7 @@ validation:
 # Checkpointing
 checkpoint:
   save_dir: "experiments/checkpoints"
-  save_frequency: 10
+  save_frequency: 20
   keep_last_n: 5
 
 # Logging

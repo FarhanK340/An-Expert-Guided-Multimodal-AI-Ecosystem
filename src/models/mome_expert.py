@@ -108,10 +108,13 @@ class ModalityExpert(nn.Module):
             self.attention_blocks.append(attention)
         
         # Decoder
+        self.upsample_blocks = nn.ModuleList()
         self.decoder_blocks = nn.ModuleList()
         for i in range(self.depth - 1, -1, -1):
-            decoder_block = nn.Sequential(
-                nn.ConvTranspose3d(self.channels[i + 1], self.channels[i], 2, 2),
+            self.upsample_blocks.append(
+                nn.ConvTranspose3d(self.channels[i + 1], self.channels[i], 2, 2)
+            )
+            self.decoder_blocks.append(
                 UNetBlock(
                     self.channels[i + 1],  # After concatenation
                     self.channels[i], 
@@ -119,7 +122,6 @@ class ModalityExpert(nn.Module):
                     dropout=dropout
                 )
             )
-            self.decoder_blocks.append(decoder_block)
         
         # Final classification
         self.final_conv = nn.Conv3d(self.channels[0], self.num_classes, 1)
@@ -177,8 +179,10 @@ class ModalityExpert(nn.Module):
         # Decoder
         skip_connections = skip_connections[:-1]  # Remove the last skip connection
         
-        for decoder_block in self.decoder_blocks:
+        for upsample, decoder_block in zip(self.upsample_blocks, self.decoder_blocks):
             skip = skip_connections.pop()
+            
+            x = upsample(x)
             
             # Handle size mismatch
             if x.shape != skip.shape:

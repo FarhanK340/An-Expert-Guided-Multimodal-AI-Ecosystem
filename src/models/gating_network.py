@@ -107,6 +107,9 @@ class HierarchicalGatingNetwork(nn.Module):
         Returns:
             Tuple of (expert_weights, spatial_attention)
         """
+        # Save original input for spatial attention
+        input_x = x
+        
         # Input projection
         x = self.input_projection(x)
         
@@ -119,7 +122,7 @@ class HierarchicalGatingNetwork(nn.Module):
         expert_weights = F.softmax(expert_weights / self.temperature, dim=1)
         
         # Spatial attention
-        spatial_attention = self.spatial_attention(x)
+        spatial_attention = self.spatial_attention(input_x)
         
         return expert_weights, spatial_attention
 
@@ -291,11 +294,13 @@ class ExpertFusion(nn.Module):
             fused_output = torch.zeros_like(expert_outputs[0])
             for i, output in enumerate(expert_outputs):
                 weight = expert_weights[:, i:i+1, None, None, None]
-                fused_output += weight * output
-            
-            # Apply spatial attention if provided
-            if spatial_attention is not None:
-                fused_output = fused_output * spatial_attention
+                term = weight * output
+                
+                # Apply spatial attention if provided
+                if spatial_attention is not None:
+                     term = term * spatial_attention[:, i:i+1, ...]
+                
+                fused_output += term
             
         elif self.fusion_method == "attention":
             # Concatenate all outputs

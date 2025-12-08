@@ -44,19 +44,20 @@ class DiceLoss(nn.Module):
                 targets: torch.Tensor) -> torch.Tensor:
         """
         Compute Dice loss.
-        
-        Args:
-            predictions: Predicted segmentation masks (B, C, D, H, W)
-            targets: Ground truth masks (B, D, H, W)
-            
-        Returns:
-            Dice loss
+        Handles both multi-class (softmax) and multi-label (sigmoid) cases automatically
+        based on target shape.
         """
-        # Convert targets to one-hot encoding
-        targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
-        
-        # Apply softmax to predictions
-        predictions = F.softmax(predictions, dim=1)
+        # Check if targets are already one-hot/multi-label (same channels as predictions)
+        if targets.shape == predictions.shape:
+            # Multi-label case (e.g. BraTS overlapping regions)
+            targets_one_hot = targets.float()
+            # Use Sigmoid for multi-label
+            predictions = torch.sigmoid(predictions)
+        else:
+            # Multi-class case (e.g. integer labels)
+            targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
+            # Use Softmax for multi-class
+            predictions = F.softmax(predictions, dim=1)
         
         # Compute intersection and union
         intersection = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
@@ -80,9 +81,6 @@ class DiceLoss(nn.Module):
 class FocalLoss(nn.Module):
     """
     Focal loss for handling class imbalance in medical image segmentation.
-    
-    Addresses the class imbalance problem by down-weighting easy examples
-    and focusing on hard examples.
     """
     
     def __init__(self, 
@@ -90,15 +88,6 @@ class FocalLoss(nn.Module):
                  gamma: float = 2.0,
                  ignore_index: int = -1,
                  reduction: str = "mean"):
-        """
-        Initialize Focal loss.
-        
-        Args:
-            alpha: Weighting factor for rare class
-            gamma: Focusing parameter
-            ignore_index: Index to ignore in loss computation
-            reduction: Reduction method ("mean", "sum", "none")
-        """
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
@@ -110,24 +99,20 @@ class FocalLoss(nn.Module):
                 targets: torch.Tensor) -> torch.Tensor:
         """
         Compute Focal loss.
-        
-        Args:
-            predictions: Predicted logits (B, C, D, H, W)
-            targets: Ground truth masks (B, D, H, W)
-            
-        Returns:
-            Focal loss
         """
-        # Compute cross-entropy loss
-        ce_loss = F.cross_entropy(predictions, targets, 
-                                ignore_index=self.ignore_index, 
-                                reduction="none")
-        
-        # Compute probabilities
-        pt = torch.exp(-ce_loss)
-        
-        # Compute focal loss
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        if targets.shape == predictions.shape:
+             # Multi-label case: Use Binary Cross Entropy
+             # BCEWithLogitsLoss is more stable
+             bce_loss = F.binary_cross_entropy_with_logits(predictions, targets.float(), reduction='none')
+             pt = torch.exp(-bce_loss)
+             focal_loss = self.alpha * (1 - pt) ** self.gamma * bce_loss
+        else:
+            # Multi-class case: Use Cross Entropy
+            ce_loss = F.cross_entropy(predictions, targets, 
+                                    ignore_index=self.ignore_index, 
+                                    reduction="none")
+            pt = torch.exp(-ce_loss)
+            focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
         
         # Handle reduction
         if self.reduction == "mean":
@@ -141,9 +126,6 @@ class FocalLoss(nn.Module):
 class TverskyLoss(nn.Module):
     """
     Tversky loss for medical image segmentation.
-    
-    Generalizes Dice loss by allowing different weights for false positives
-    and false negatives.
     """
     
     def __init__(self, 
@@ -151,15 +133,6 @@ class TverskyLoss(nn.Module):
                  beta: float = 0.7,
                  smooth: float = 1e-6,
                  reduction: str = "mean"):
-        """
-        Initialize Tversky loss.
-        
-        Args:
-            alpha: Weight for false positives
-            beta: Weight for false negatives
-            smooth: Smoothing factor
-            reduction: Reduction method
-        """
         super().__init__()
         self.alpha = alpha
         self.beta = beta
@@ -171,19 +144,15 @@ class TverskyLoss(nn.Module):
                 targets: torch.Tensor) -> torch.Tensor:
         """
         Compute Tversky loss.
-        
-        Args:
-            predictions: Predicted segmentation masks (B, C, D, H, W)
-            targets: Ground truth masks (B, D, H, W)
-            
-        Returns:
-            Tversky loss
         """
-        # Convert targets to one-hot encoding
-        targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
-        
-        # Apply softmax to predictions
-        predictions = F.softmax(predictions, dim=1)
+        if targets.shape == predictions.shape:
+            # Multi-label
+            targets_one_hot = targets.float()
+            predictions = torch.sigmoid(predictions)
+        else:
+            # Multi-class
+            targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
+            predictions = F.softmax(predictions, dim=1)
         
         # Compute true positives, false positives, and false negatives
         tp = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
@@ -208,8 +177,6 @@ class TverskyLoss(nn.Module):
 class CombinedLoss(nn.Module):
     """
     Combined loss function for medical image segmentation.
-    
-    Combines multiple loss functions with learnable weights.
     """
     
     def __init__(self, 
@@ -218,16 +185,6 @@ class CombinedLoss(nn.Module):
                  ce_weight: float = 1.0,
                  focal_weight: float = 0.5,
                  tversky_weight: float = 0.0):
-        """
-        Initialize combined loss.
-        
-        Args:
-            loss_config: Loss configuration dictionary
-            dice_weight: Weight for Dice loss
-            ce_weight: Weight for Cross-entropy loss
-            focal_weight: Weight for Focal loss
-            tversky_weight: Weight for Tversky loss
-        """
         super().__init__()
         
         # Get weights from config or use defaults
@@ -242,10 +199,12 @@ class CombinedLoss(nn.Module):
             reduction="mean"
         )
         
-        self.ce_loss = nn.CrossEntropyLoss(
+        # Note: ce_loss used for multi-class, for multi-label we handle internally or via Focal
+        self.ce_loss_fn = nn.CrossEntropyLoss(
             ignore_index=loss_config.get("ignore_index", -1),
             reduction="mean"
         )
+        self.bce_loss_fn = nn.BCEWithLogitsLoss(reduction="mean")
         
         self.focal_loss = FocalLoss(
             alpha=loss_config.get("focal_alpha", 0.25),
@@ -265,44 +224,53 @@ class CombinedLoss(nn.Module):
                 batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         """
         Compute combined loss.
-        
-        Args:
-            outputs: Model outputs dictionary
-            batch: Batch dictionary with ground truth
-            
-        Returns:
-            Combined loss
         """
         predictions = outputs["segmentation"]
         targets = batch["mask"]
         
+        # Determine strict or soft matching based on shape
+        if targets.dim() == 5 and targets.shape[1] > 1:
+            # Multi-label case (B, C, D, H, W)
+            targets = targets.float()
+            is_multilabel = True
+        else:
+            # Multi-class case (index labels)
+            targets = targets.long()
+            if targets.dim() == 5 and targets.shape[1] == 1:
+                 targets = targets.squeeze(1)
+            is_multilabel = False
+        
         total_loss = 0.0
         loss_components = {}
         
-        # Dice loss
+        # Dice loss (handles both modes)
         if self.dice_weight > 0:
             dice_loss = self.dice_loss(predictions, targets)
             total_loss += self.dice_weight * dice_loss
             loss_components["dice_loss"] = dice_loss.item()
         
-        # Cross-entropy loss
+        # Cross-entropy / BCE loss
         if self.ce_weight > 0:
-            ce_loss = self.ce_loss(predictions, targets)
-            total_loss += self.ce_weight * ce_loss
-            loss_components["ce_loss"] = ce_loss.item()
+            if is_multilabel:
+                ce_val = self.bce_loss_fn(predictions, targets)
+            else:
+                ce_val = self.ce_loss_fn(predictions, targets)
+            
+            total_loss += self.ce_weight * ce_val
+            loss_components["ce_loss"] = ce_val.item()
         
-        # Focal loss
+        # Focal loss (handles both modes)
         if self.focal_weight > 0:
             focal_loss = self.focal_loss(predictions, targets)
             total_loss += self.focal_weight * focal_loss
             loss_components["focal_loss"] = focal_loss.item()
         
-        # Tversky loss
+        # Tversky loss (handles both modes)
         if self.tversky_weight > 0:
             tversky_loss = self.tversky_loss(predictions, targets)
             total_loss += self.tversky_weight * tversky_loss
             loss_components["tversky_loss"] = tversky_loss.item()
-        
+            
         # Store loss components for logging
         outputs["loss_components"] = loss_components
         

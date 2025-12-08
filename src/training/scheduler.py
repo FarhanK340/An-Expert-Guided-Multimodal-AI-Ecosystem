@@ -37,25 +37,16 @@ def get_optimizer(model: torch.nn.Module, config: Dict) -> torch.optim.Optimizer
         optimizer = optim.Adam(
             model.parameters(),
             lr=lr,
-            weight_decay=weight_decay,
-            betas=config.get("betas", [0.9, 0.999]),
-            eps=config.get("eps", 1e-8)
+            momentum=config.get("momentum", 0.9),
+            nesterov=config.get("nesterov", True)
         )
     elif optimizer_type == "adamw":
         optimizer = optim.AdamW(
             model.parameters(),
-            lr=lr,
-            weight_decay=weight_decay,
-            betas=config.get("betas", [0.9, 0.999]),
-            eps=config.get("eps", 1e-8)
-        )
-    elif optimizer_type == "sgd":
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=lr,
-            weight_decay=weight_decay,
-            momentum=config.get("momentum", 0.9),
-            nesterov=config.get("nesterov", True)
+            lr=float(config.get("lr", 1e-4)),
+            weight_decay=float(config.get("weight_decay", 1e-5)),
+            betas=config.get("betas", (0.9, 0.999)),
+            eps=float(config.get("eps", 1e-8))
         )
     elif optimizer_type == "rmsprop":
         optimizer = optim.RMSprop(
@@ -109,31 +100,31 @@ def get_scheduler(optimizer: torch.optim.Optimizer, config: Dict) -> Optional[to
     elif scheduler_type == "cosineannealinglr":
         scheduler = CosineAnnealingLR(
             optimizer,
-            T_max=config.get("T_max", 100),
-            eta_min=config.get("eta_min", 1e-6)
+            T_max=int(config.get("T_max", 100)),
+            eta_min=float(config.get("eta_min", 1e-6))
         )
     elif scheduler_type == "cosineannealingwarmrestarts":
         scheduler = CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=config.get("T_0", 10),
-            T_mult=config.get("T_mult", 1),
-            eta_min=config.get("eta_min", 1e-6)
+            T_0=int(config.get("T_0", 10)),
+            T_mult=int(config.get("T_mult", 1)),
+            eta_min=float(config.get("eta_min", 1e-6))
         )
     elif scheduler_type == "reducelronplateau":
         scheduler = ReduceLROnPlateau(
             optimizer,
             mode=config.get("mode", "min"),
-            factor=config.get("factor", 0.1),
-            patience=config.get("patience", 10),
-            threshold=config.get("threshold", 1e-4),
-            min_lr=config.get("min_lr", 1e-6)
+            factor=float(config.get("factor", 0.1)),
+            patience=int(config.get("patience", 10)),
+            threshold=float(config.get("threshold", 1e-4)),
+            min_lr=float(config.get("min_lr", 1e-6))
         )
     elif scheduler_type == "onecyclelr":
         scheduler = OneCycleLR(
             optimizer,
-            max_lr=config.get("max_lr", 1e-3),
-            total_steps=config.get("total_steps", 1000),
-            pct_start=config.get("pct_start", 0.3),
+            max_lr=float(config.get("max_lr", 1e-3)),
+            total_steps=int(config.get("total_steps", 1000)),
+            pct_start=float(config.get("pct_start", 0.3)),
             anneal_strategy=config.get("anneal_strategy", "cos")
         )
     else:
