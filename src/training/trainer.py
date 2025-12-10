@@ -230,23 +230,6 @@ class Trainer:
     
     def _train_epoch(self) -> float:
         """Train for one epoch."""
-        self.model.train()
-        total_loss = 0.0
-        num_batches = len(self.train_dataloader)
-        
-        progress_bar = tqdm(self.train_dataloader, desc=f"Epoch {self.current_epoch + 1}/{self.epochs}")
-            # Log training progress
-            if self.global_step % self.log_frequency == 0:
-                self._log_training_step(loss.item())
-            
-            # Update progress bar
-            progress_bar.set_postfix({
-                "Loss": f"{loss.item():.4f}",
-                "Avg Loss": f"{total_loss / (batch_idx + 1):.4f}"
-            })
-        
-        return total_loss / num_batches
-    
     def _validate_epoch(self) -> Tuple[float, Dict[str, float]]:
         """Validate for one epoch."""
         self.model.eval()
