@@ -230,6 +230,77 @@ class Trainer:
     
     def _train_epoch(self) -> float:
         """Train for one epoch."""
+        self.model.train()
+        total_loss = 0.0
+        num_batches = len(self.train_dataloader)
+        
+        progress_bar = tqdm(self.train_dataloader, desc=f"Epoch {self.current_epoch + 1}/{self.epochs}")
+        
+        for batch_idx, batch in enumerate(progress_bar):
+            # Move batch to device
+            batch = self._move_batch_to_device(batch)
+            
+            # Forward pass with FP16 autocast
+            with torch.cuda.amp.autocast(enabled=self.use_amp):
+                # Unpack modalities from stacked image
+                modalities = self.config.get("dataset", {}).get("modalities", ["T1", "T1ce", "T2", "FLAIR"])
+                if "image" in batch:
+                    for i, mod in enumerate(modalities):
+                         if i < batch["image"].shape[1]:
+                             batch[mod] = batch["image"][:, i:i+1, ...]
+
+                outputs = self.model(batch)
+                
+                # Compute loss
+                loss = self.criterion(outputs, batch)
+                
+                # Add continual learning loss if enabled
+                if self.continual_learning:
+                    cl_loss = self.model.compute_continual_learning_loss(loss, self.model.current_task_id)
+                    loss = cl_loss
+                
+                # Scale loss for gradient accumulation
+                loss = loss / self.gradient_accumulation_steps
+            
+            # Backward pass with FP16 scaling
+            if self.use_amp:
+                self.scaler.scale(loss).backward()
+            else:
+                loss.backward()
+            
+            # Optimizer step with gradient accumulation
+            if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
+                # Gradient clipping
+                if self.gradient_clip_norm > 0:
+                    if self.use_amp:
+                        self.scaler.unscale_(self.optimizer)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.gradient_clip_norm)
+                
+                # Optimizer step
+                if self.use_amp:
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    self.optimizer.step()
+                
+                self.optimizer.zero_grad()
+            
+            # Update statistics (multiply back by accumulation steps for display)
+            total_loss += loss.item() * self.gradient_accumulation_steps
+            self.global_step += 1
+            
+            # Log training progress
+            if self.global_step % self.log_frequency == 0:
+                self._log_training_step(loss.item() * self.gradient_accumulation_steps)
+            
+            # Update progress bar
+            progress_bar.set_postfix({
+                "Loss": f"{loss.item() * self.gradient_accumulation_steps:.4f}",
+                "Avg Loss": f"{total_loss / (batch_idx + 1):.4f}"
+            })
+        
+        return total_loss / num_batches
+    
     def _validate_epoch(self) -> Tuple[float, Dict[str, float]]:
         """Validate for one epoch."""
         self.model.eval()

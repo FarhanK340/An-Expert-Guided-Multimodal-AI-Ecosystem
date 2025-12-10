@@ -1,0 +1,88 @@
+# Training Configuration - OPTIMIZED WITH PREPROCESSING + FP16
+
+# Dataset Configuration - Using Preprocessed Crops
+dataset:
+  name: "BraTS2024_Preprocessed"
+  preprocessed: true
+  train_h5: "data/preprocessed/brats2024_gli_train.h5"
+  val_h5: "data/preprocessed/brats2024_gli_val.h5"
+  modalities: ["T1", "T1ce", "T2", "FLAIR"]
+  num_classes: 3  # WT, TC, ET
+  class_names: ["Whole Tumor", "Tumor Core", "Enhancing Tumor"]
+
+# Preprocessing (disabled - using preprocessed data)
+preprocessing:
+  modalities: ["T1", "T1ce", "T2", "FLAIR"]
+  target_spacing: [1.0, 1.0, 1.0]
+  crop_size: [64, 64, 64]
+  
+# Data Loading - Optimized for HDF5
+data_loader:
+  batch_size: 8  # Increased from 2 with FP16 + preprocessing
+  num_workers: 4  # Increased - HDF5 loading is fast
+  pin_memory: true
+  shuffle: true
+  drop_last: true
+
+# Training Parameters - With FP16
+training:
+  epochs: 300  # Extended for better convergence
+  learning_rate: 5e-5
+  weight_decay: 1e-4
+  gradient_clip_norm: 1.0
+  use_amp: true  # ENABLE FP16 Mixed Precision
+  gradient_accumulation_steps: 1
+  
+# Optimizer
+optimizer:
+  type: "AdamW"
+  lr: 5e-5
+  weight_decay: 1e-4
+  betas: [0.9, 0.999]
+  eps: 1e-8
+
+# Scheduler
+scheduler:
+  type: "ReduceLROnPlateau"
+  mode: "max"
+  factor: 0.5
+  patience: 5
+  threshold: 0.01
+  min_lr: 1e-6
+  verbose: true
+
+# Loss Configuration - With class weighting
+loss:
+  dice_weight: 1.0
+  ce_weight: 1.0
+  focal_weight: 0.5
+  focal_alpha: 0.25
+  focal_gamma: 2.0
+  class_weights: [1.0, 2.0, 3.0]  # WT, TC, ET
+
+# Validation
+validation:
+  frequency: 5
+  save_best: true
+  metric: "dice_score"
+
+# Checkpointing
+checkpoint:
+  save_dir: "experiments/checkpoints"
+  save_frequency: 20
+  keep_last_n: 5
+
+# Logging
+logging:
+  log_dir: "experiments/logs"
+  log_frequency: 50
+  use_tensorboard: true
+  use_wandb: false
+
+# Augmentation (on preprocessed crops)
+augmentation:
+  enabled: true
+  random_flip_prob: 0.5
+  random_rotate_prob: 0.5
+  random_noise_prob: 0.3
+  random_smooth_prob: 0.2
