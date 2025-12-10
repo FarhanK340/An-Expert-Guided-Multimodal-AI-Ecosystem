@@ -86,6 +86,11 @@ class Trainer:
         self.weight_decay = config.get("training", {}).get("weight_decay", 1e-5)
         self.gradient_clip_norm = config.get("training", {}).get("gradient_clip_norm", 1.0)
         
+        # FP16 Mixed Precision
+        self.use_amp = config.get("training", {}).get("use_amp", False)
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
+        self.gradient_accumulation_steps = config.get("training", {}).get("gradient_accumulation_steps", 1)
+        
         # Validation configuration
         self.val_frequency = config.get("validation", {}).get("frequency", 5)
         self.save_best = config.get("validation", {}).get("save_best", True)
@@ -188,6 +193,13 @@ class Trainer:
                 # Update training history
                 self.training_history["val_loss"].append(val_loss)
                 self.training_history["val_metrics"].append(val_metrics)
+                
+                # Update scheduler with validation metric (for ReduceLROnPlateau)
+                if self.scheduler:
+                    if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                        self.scheduler.step(val_metrics[self.best_metric])
+                    else:
+                        self.scheduler.step()
             else:
                 val_loss, val_metrics = None, None
             
@@ -200,10 +212,6 @@ class Trainer:
             
             # Log training results
             self._log_training_results(train_loss, val_loss, val_metrics)
-            
-            # Update learning rate
-            if self.scheduler:
-                self.scheduler.step()
         
         # Final save
         self._save_checkpoint(is_final=True)
@@ -227,43 +235,6 @@ class Trainer:
         num_batches = len(self.train_dataloader)
         
         progress_bar = tqdm(self.train_dataloader, desc=f"Epoch {self.current_epoch + 1}/{self.epochs}")
-        
-        for batch_idx, batch in enumerate(progress_bar):
-            # Move batch to device
-            batch = self._move_batch_to_device(batch)
-            
-            # Forward pass
-            # Unpack modalities from stacked image
-            modalities = self.config.get("dataset", {}).get("modalities", ["T1", "T1ce", "T2", "FLAIR"])
-            if "image" in batch:
-                for i, mod in enumerate(modalities):
-                     if i < batch["image"].shape[1]:
-                         batch[mod] = batch["image"][:, i:i+1, ...]
-
-            outputs = self.model(batch)
-            
-            # Compute loss
-            loss = self.criterion(outputs, batch)
-            
-            # Add continual learning loss if enabled
-            if self.continual_learning:
-                cl_loss = self.model.compute_continual_learning_loss(loss, self.model.current_task_id)
-                loss = cl_loss
-            
-            # Backward pass
-            self.optimizer.zero_grad()
-            loss.backward()
-            
-            # Gradient clipping
-            if self.gradient_clip_norm > 0:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.gradient_clip_norm)
-            
-            self.optimizer.step()
-            
-            # Update statistics
-            total_loss += loss.item()
-            self.global_step += 1
-            
             # Log training progress
             if self.global_step % self.log_frequency == 0:
                 self._log_training_step(loss.item())

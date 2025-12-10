@@ -14,11 +14,11 @@ preprocessing:
   modalities: ["T1", "T1ce", "T2", "FLAIR"]
   target_spacing: [1.0, 1.0, 1.0]
   target_spacing: [1.0, 1.0, 1.0]
-  crop_size: [64, 64, 64]
+  crop_size: [64, 64, 64]  # Optimal: batch=2 for best training dynamics
   
 # Data Loading
 data_loader:
-  batch_size: 1
+  batch_size: 2  # Increased from 1 for better training dynamics
   num_workers: 2
   pin_memory: true
   shuffle: true
@@ -26,24 +26,28 @@ data_loader:
 
 # Training Parameters
 training:
-  epochs: 100
-  learning_rate: 1e-4
-  weight_decay: 1e-5
+  epochs: 150  # Extended from 100 to allow better convergence
+  learning_rate: 5e-5  # Reduced from 1e-4 for more stable training
+  weight_decay: 1e-4  # Increased from 1e-5 for better regularization
   gradient_clip_norm: 1.0
   
 # Optimizer
 optimizer:
   type: "AdamW"
-  lr: 1e-4
-  weight_decay: 1e-5
+  lr: 5e-5  # Reduced from 1e-4
+  weight_decay: 1e-4  # Increased from 1e-5
   betas: [0.9, 0.999]
   eps: 1e-8
 
-# Scheduler
+# Scheduler - Switched to ReduceLROnPlateau for adaptive learning
 scheduler:
-  type: "CosineAnnealingLR"
-  T_max: 100
-  eta_min: 1e-6
+  type: "ReduceLROnPlateau"
+  mode: "max"  # Maximize Dice score
+  factor: 0.5  # Reduce LR by half
+  patience: 5  # Wait 5 validations before reducing
+  threshold: 0.01  # Minimum improvement threshold
+  min_lr: 1e-6
+  verbose: true
 
 # Loss Configuration
 loss:
@@ -52,6 +56,8 @@ loss:
   focal_weight: 0.5
   focal_alpha: 0.25
   focal_gamma: 2.0
+  # Class weights for handling class imbalance (WT, TC, ET)
+  class_weights: [1.0, 2.0, 3.0]  # Higher weight for smaller/harder classes
 
 # Validation
 validation:

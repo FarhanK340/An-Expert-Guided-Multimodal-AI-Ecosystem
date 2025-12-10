@@ -25,7 +25,8 @@ class DiceLoss(nn.Module):
     def __init__(self, 
                  smooth: float = 1e-6,
                  ignore_index: int = -1,
-                 reduction: str = "mean"):
+                 reduction: str = "mean",
+                 class_weights: Optional[List[float]] = None):
         """
         Initialize Dice loss.
         
@@ -33,11 +34,13 @@ class DiceLoss(nn.Module):
             smooth: Smoothing factor to avoid division by zero
             ignore_index: Index to ignore in loss computation
             reduction: Reduction method ("mean", "sum", "none")
+            class_weights: Per-class weights for handling imbalance (e.g., [1.0, 2.0, 3.0])
         """
         super().__init__()
         self.smooth = smooth
         self.ignore_index = ignore_index
         self.reduction = reduction
+        self.class_weights = torch.tensor(class_weights) if class_weights else None
     
     def forward(self, 
                 predictions: torch.Tensor, 
@@ -68,6 +71,12 @@ class DiceLoss(nn.Module):
         
         # Compute Dice loss
         dice_loss = 1.0 - dice
+        
+        # Apply class weights if provided
+        if self.class_weights is not None:
+            class_weights = self.class_weights.to(dice_loss.device)
+            # dice_loss shape: (B, C), class_weights shape: (C,)
+            dice_loss = dice_loss * class_weights.unsqueeze(0)
         
         # Handle reduction
         if self.reduction == "mean":
@@ -193,10 +202,14 @@ class CombinedLoss(nn.Module):
         self.focal_weight = loss_config.get("focal_weight", focal_weight)
         self.tversky_weight = loss_config.get("tversky_weight", tversky_weight)
         
+        # Get class weights for handling imbalance
+        class_weights = loss_config.get("class_weights", None)
+        
         # Initialize loss functions
         self.dice_loss = DiceLoss(
             smooth=loss_config.get("dice_smooth", 1e-6),
-            reduction="mean"
+            reduction="mean",
+            class_weights=class_weights
         )
         
         # Note: ce_loss used for multi-class, for multi-label we handle internally or via Focal
