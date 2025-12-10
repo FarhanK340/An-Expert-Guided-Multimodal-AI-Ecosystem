@@ -18,9 +18,9 @@ preprocessing:
   
 # Data Loading - Optimized for HDF5
 data_loader:
-  batch_size: 8  # Increased from 2 with FP16 + preprocessing
-  num_workers: 4  # Increased - HDF5 loading is fast
-  pin_memory: true
+  batch_size: 4  # FINAL: Optimal performance (3s/it vs 11.74s for batch=5)
+  num_workers: 0  # Must be 0 for HDF5 files (single-threaded access required)
+  pin_memory: false  # MUST be false for HDF5 - pin_memory pins entire file
   shuffle: true
   drop_last: true
 

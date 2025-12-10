@@ -51,9 +51,11 @@ class PreprocessedBraTSDataset(Dataset):
         case_name = crop_group.attrs["case_name"]
         
         # Convert to dict format expected by training loop
+        # CRITICAL: Return torch tensors directly to avoid conversion overhead
+        # Use contiguous memory for faster GPU transfer
         sample = {
-            "image": image.astype(np.float32),
-            "mask": mask.astype(np.float32),
+            "image": torch.from_numpy(image.astype(np.float32)).contiguous(),
+            "mask": torch.from_numpy(mask.astype(np.float32)).contiguous(),
             "case_name": case_name
         }
         

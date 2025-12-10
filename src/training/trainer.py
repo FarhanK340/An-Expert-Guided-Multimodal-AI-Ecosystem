@@ -479,6 +479,12 @@ def main():
     # Load configuration
     config = load_config(args.config)
     
+    # Clear GPU memory from any previous runs
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        logger.info("Cleared CUDA cache")
+    
     # Set device
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     
@@ -506,43 +512,59 @@ def main():
         NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True)
     ])
 
-    # Create datasets
-    data_dir = config.get("dataset", {}).get("data_dir", "data/processed")
-    raw_data_dir = config.get("dataset", {}).get("raw_data_dir", None)
-    dataset_name = config.get("dataset", {}).get("name", "BraTS2024")
+    # Create datasets - Check for preprocessed HDF5 vs raw data
+    dataset_config = config.get("dataset", {})
+    use_preprocessed = dataset_config.get("preprocessed", False)
     
-    if raw_data_dir:
-        # On-the-fly loading mode
-        logger.info(f"Using on-the-fly loading from {raw_data_dir}")
-        train_data_path = raw_data_dir
-        val_data_path = raw_data_dir
-        # Split file is expected in data_dir
-        split_file = Path(data_dir) / f"{dataset_name}_split.json"
+    if use_preprocessed:
+        # Load preprocessed HDF5 datasets
+        from .preprocessed_dataset import PreprocessedBraTSDataset
         
-        if not split_file.exists():
-             logger.warning(f"Split file not found at {split_file}. Using full data dir without strict split.")
-             # This might fail if the dataset expects a split file for raw loading
+        train_h5 = dataset_config.get("train_h5", "data/preprocessed/brats2024_gli_train.h5")
+        val_h5 = dataset_config.get("val_h5", "data/preprocessed/brats2024_gli_val.h5")
+        
+        logger.info(f"Loading preprocessed HDF5 datasets")
+        logger.info(f"  Train: {train_h5}")
+        logger.info(f"  Val: {val_h5}")
+        
+        train_dataset = PreprocessedBraTSDataset(h5_path=train_h5)
+        val_dataset = PreprocessedBraTSDataset(h5_path=val_h5)
     else:
-        # Processed data loading mode
-        train_data_path = Path(data_dir) / dataset_name
-        val_data_path = Path(data_dir) / dataset_name
-        split_file = None
+        # Use standard BraTSDataset with on-the-fly loading
+        data_dir = dataset_config.get("data_dir", "data/processed")
+        raw_data_dir = dataset_config.get("raw_data_dir", None)
+        dataset_name = dataset_config.get("name", "BraTS2024")
+        
+        if raw_data_dir:
+            # On-the-fly loading mode
+            logger.info(f"Using on-the-fly loading from {raw_data_dir}")
+            train_data_path = raw_data_dir
+            val_data_path = raw_data_dir
+            split_file = Path(data_dir) / f"{dataset_name}_split.json"
+            
+            if not split_file.exists():
+                 logger.warning(f"Split file not found at {split_file}. Using full data dir without strict split.")
+        else:
+            # Processed data loading mode
+            train_data_path = Path(data_dir) / dataset_name
+            val_data_path = Path(data_dir) / dataset_name
+            split_file = None
 
-    train_dataset = BraTSDataset(
-        data_dir=str(train_data_path),
-        mode="train",
-        modalities=config.get("dataset", {}).get("modalities", ["T1", "T1ce", "T2", "FLAIR"]),
-        transform=train_transforms,
-        split_file=str(split_file) if split_file else None
-    )
-    
-    val_dataset = BraTSDataset(
-        data_dir=str(val_data_path),
-        mode="val",
-        modalities=config.get("dataset", {}).get("modalities", ["T1", "T1ce", "T2", "FLAIR"]),
-        transform=val_transforms,
-        split_file=str(split_file) if split_file else None
-    )
+        train_dataset = BraTSDataset(
+            data_dir=str(train_data_path),
+            mode="train",
+            modalities=dataset_config.get("modalities", ["T1", "T1ce", "T2", "FLAIR"]),
+            transform=train_transforms,
+            split_file=str(split_file) if split_file else None
+        )
+        
+        val_dataset = BraTSDataset(
+            data_dir=str(val_data_path),
+            mode="val",
+            modalities=dataset_config.get("modalities", ["T1", "T1ce", "T2", "FLAIR"]),
+            transform=val_transforms,
+            split_file=str(split_file) if split_file else None
+        )
     
     # Create data loaders
     train_loader_config = config.get("data_loader", {})
