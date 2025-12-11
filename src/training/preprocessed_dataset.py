@@ -16,19 +16,25 @@ class PreprocessedBraTSDataset(Dataset):
     Much faster and more memory-efficient than loading full volumes.
     """
     
-    def __init__(self, h5_path: str, transform=None):
+    def __init__(self, h5_path: str, transform=None, max_crops: int = None):
         """
         Args:
             h5_path: Path to HDF5 file (e.g., data/preprocessed/brats2024_gli_train.h5)
             transform: Optional MONAI transforms to apply
+            max_crops: Maximum crops to use (if None, use all). Useful for faster training.
         """
         self.h5_path = Path(h5_path)
         self.transform = transform
+        self.max_crops = max_crops
         
         # Open HDF5 file to get metadata
         with h5py.File(str(self.h5_path), 'r') as h5f:
             self.num_crops = h5f.attrs["num_crops"]
             self.crop_size = tuple(h5f.attrs["crop_size"])
+        
+        # If max_crops specified, use only that many
+        if self.max_crops is not None and self.max_crops < self.num_crops:
+            self.num_crops = self.max_crops
         
         # Keep file open for duration (faster access)
         self.h5_file = None

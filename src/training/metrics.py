@@ -45,15 +45,19 @@ class DiceScore:
              targets_one_hot = targets.float()
              # Use Sigmoid for multi-label
              predictions = torch.sigmoid(predictions)
+             # Threshold predictions for binary segmentation
+             predictions_binary = (predictions > 0.5).float()
         else:
              # Convert targets to one-hot encoding
              targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
              # Use Softmax for multi-class
              predictions = F.softmax(predictions, dim=1)
+             # Convert to one-hot by taking argmax
+             predictions_binary = F.one_hot(predictions.argmax(dim=1), num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
         
-        # Compute intersection and union
-        intersection = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
-        union = predictions.sum(dim=(2, 3, 4)) + targets_one_hot.sum(dim=(2, 3, 4))
+        # Compute intersection and union using BINARY predictions
+        intersection = (predictions_binary * targets_one_hot).sum(dim=(2, 3, 4))
+        union = predictions_binary.sum(dim=(2, 3, 4)) + targets_one_hot.sum(dim=(2, 3, 4))
         
         # Compute Dice coefficient
         dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
@@ -86,13 +90,15 @@ class IoUScore:
         if targets.shape == predictions.shape:
              targets_one_hot = targets.float()
              predictions = torch.sigmoid(predictions)
+             predictions_binary = (predictions > 0.5).float()
         else:
              targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
              predictions = F.softmax(predictions, dim=1)
+             predictions_binary = F.one_hot(predictions.argmax(dim=1), num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
         
-        # Compute intersection and union
-        intersection = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
-        union = predictions.sum(dim=(2, 3, 4)) + targets_one_hot.sum(dim=(2, 3, 4)) - intersection
+        # Compute intersection and union using BINARY predictions
+        intersection = (predictions_binary * targets_one_hot).sum(dim=(2, 3, 4))
+        union = predictions_binary.sum(dim=(2, 3, 4)) + targets_one_hot.sum(dim=(2, 3, 4)) - intersection
         
         # Compute IoU
         iou = (intersection + self.smooth) / (union + self.smooth)
@@ -125,14 +131,16 @@ class PrecisionRecall:
         if targets.shape == predictions.shape:
              targets_one_hot = targets.float()
              predictions = torch.sigmoid(predictions)
+             predictions_binary = (predictions > 0.5).float()
         else:
              targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
              predictions = F.softmax(predictions, dim=1)
+             predictions_binary = F.one_hot(predictions.argmax(dim=1), num_classes=predictions.size(1)).permute(0, 4, 1, 2, 3).float()
         
-        # Compute true positives, false positives, and false negatives
-        tp = (predictions * targets_one_hot).sum(dim=(2, 3, 4))
-        fp = (predictions * (1 - targets_one_hot)).sum(dim=(2, 3, 4))
-        fn = ((1 - predictions) * targets_one_hot).sum(dim=(2, 3, 4))
+        # Compute true positives, false positives, and false negatives using BINARY predictions
+        tp = (predictions_binary * targets_one_hot).sum(dim=(2, 3, 4))
+        fp = (predictions_binary * (1 - targets_one_hot)).sum(dim=(2, 3, 4))
+        fn = ((1 - predictions_binary) * targets_one_hot).sum(dim=(2, 3, 4))
         
         # Compute precision and recall
         precision = (tp + self.smooth) / (tp + fp + self.smooth)

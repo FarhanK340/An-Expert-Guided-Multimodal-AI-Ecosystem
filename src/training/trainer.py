@@ -206,9 +206,8 @@ class Trainer:
             # Update training history
             self.training_history["train_loss"].append(train_loss)
             
-            # Save checkpoint
-            if (epoch + 1) % self.save_frequency == 0:
-                self._save_checkpoint()
+            # Save recent checkpoint after every epoch
+            self._save_recent_checkpoint()
             
             # Log training results
             self._log_training_results(train_loss, val_loss, val_metrics)
@@ -400,6 +399,34 @@ class Trainer:
             logger.error(f"Failed to save checkpoint: {e}")
             # If best_model.pth save fails, backup is still safe from previous iteration
     
+    def _save_recent_checkpoint(self):
+        """Save the most recent model checkpoint (overwrites each epoch)."""
+        checkpoint = {
+            "epoch": self.current_epoch,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+            "scheduler_state_dict": self.scheduler.state_dict() if self.scheduler else None,
+            "best_score": self.best_score,
+            "training_history": self.training_history,
+            "config": self.config
+        }
+        
+        # Save to recent_model.pth
+        recent_model_path = Path(self.checkpoint_dir) / "recent_model.pth"
+        recent_model_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            torch.save(checkpoint, recent_model_path)
+            logger.info(f"Saved recent model checkpoint: {recent_model_path} (Epoch {self.current_epoch + 1})")
+            
+            # After successful write, create backup
+            backup_path = Path(self.checkpoint_dir) / "recent_model_backup.pth"
+            torch.save(checkpoint, backup_path)
+            logger.info(f"Saved recent backup checkpoint: {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to save recent checkpoint: {e}")
+            # If recent_model.pth save fails, backup is still safe from previous iteration
+    
     def _log_training_step(self, loss: float):
         """Log training step."""
         if self.writer:
@@ -516,21 +543,33 @@ def main():
     dataset_config = config.get("dataset", {})
     use_preprocessed = dataset_config.get("preprocessed", False)
     
-    if use_preprocessed:
-        # Load preprocessed HDF5 datasets
-        from .preprocessed_dataset import PreprocessedBraTSDataset
+    # Check if using preprocessed HDF5 data
+    if config.get("dataset", {}).get("preprocessed", False):
+        from ..preprocessing.dataset_loader import PreprocessedBraTSDataset
         
-        train_h5 = dataset_config.get("train_h5", "data/preprocessed/brats2024_gli_train.h5")
-        val_h5 = dataset_config.get("val_h5", "data/preprocessed/brats2024_gli_val.h5")
+        # Get paths and max_crops from config
+        train_h5 = config["dataset"]["train_h5"]
+        val_h5 = config["dataset"]["val_h5"]
+        max_crops = config.get("dataset", {}).get("max_crops", None)
         
-        logger.info(f"Loading preprocessed HDF5 datasets")
+        logger.info("Loading preprocessed HDF5 datasets")
         logger.info(f"  Train: {train_h5}")
         logger.info(f"  Val: {val_h5}")
+        if max_crops:
+            logger.info(f"  Using max_crops: {max_crops} (subset for faster training)")
         
-        train_dataset = PreprocessedBraTSDataset(h5_path=train_h5)
-        val_dataset = PreprocessedBraTSDataset(h5_path=val_h5)
-    else:
-        # Use standard BraTSDataset with on-the-fly loading
+        train_dataset = PreprocessedBraTSDataset(
+            h5_path=train_h5,
+            transform=train_transforms,
+            max_crops=max_crops
+        )
+        
+        val_dataset = PreprocessedBraTSDataset(
+            h5_path=val_h5,
+            transform=val_transforms,
+            max_crops=None  # Always use all validation crops
+        )
+    else: # standard BraTSDataset with on-the-fly loading
         data_dir = dataset_config.get("data_dir", "data/processed")
         raw_data_dir = dataset_config.get("raw_data_dir", None)
         dataset_name = dataset_config.get("name", "BraTS2024")
