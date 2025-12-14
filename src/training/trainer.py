@@ -545,7 +545,7 @@ def main():
     
     # Check if using preprocessed HDF5 data
     if config.get("dataset", {}).get("preprocessed", False):
-        from ..preprocessing.dataset_loader import PreprocessedBraTSDataset
+        from .preprocessed_dataset import PreprocessedBraTSDataset
         
         # Get paths and max_crops from config
         train_h5 = config["dataset"]["train_h5"]

@@ -230,36 +230,34 @@ class HausdorffDistance:
                                   pred_mask: torch.Tensor, 
                                   target_mask: torch.Tensor) -> float:
         """
-        Compute Hausdorff distance between two binary masks.
+        Compute Hausdorff distance using fast distance transform.
         
-        Args:
-            pred_mask: Predicted binary mask
-            target_mask: Target binary mask
-            
-        Returns:
-            Hausdorff distance
+        Uses scipy's distance_transform_edt which is O(n) instead of O(n*m).
         """
+        from scipy.ndimage import distance_transform_edt
+        
         # Convert to numpy
-        pred_mask = pred_mask.cpu().numpy()
-        target_mask = target_mask.cpu().numpy()
+        pred_mask = pred_mask.cpu().numpy().astype(bool)
+        target_mask = target_mask.cpu().numpy().astype(bool)
         
-        # Get coordinates of non-zero voxels
-        pred_coords = np.argwhere(pred_mask > 0)
-        target_coords = np.argwhere(target_mask > 0)
-        
-        if len(pred_coords) == 0 or len(target_coords) == 0:
+        # Check for empty masks
+        if not np.any(pred_mask) or not np.any(target_mask):
             return float('inf')
         
-        # Compute distances
-        distances = []
-        for coord in pred_coords:
-            dists = np.sqrt(np.sum((target_coords - coord) ** 2, axis=1))
-            distances.append(np.min(dists))
+        # Compute distance transforms (distance from each voxel to nearest foreground)
+        # For pred->target: distance transform of ~target, sampled at pred locations
+        dist_pred_to_target = distance_transform_edt(~target_mask)
+        distances_p2t = dist_pred_to_target[pred_mask]
         
-        # Compute Hausdorff distance
-        hd = np.percentile(distances, self.percentile)
+        # For target->pred: distance transform of ~pred, sampled at target locations  
+        dist_target_to_pred = distance_transform_edt(~pred_mask)
+        distances_t2p = dist_target_to_pred[target_mask]
         
-        return float(hd)
+        # Hausdorff 95 = max of 95th percentile of both directions
+        hd95_p2t = np.percentile(distances_p2t, self.percentile) if len(distances_p2t) > 0 else 0
+        hd95_t2p = np.percentile(distances_t2p, self.percentile) if len(distances_t2p) > 0 else 0
+        
+        return float(max(hd95_p2t, hd95_t2p))
 
 
 class SegmentationMetrics:
@@ -330,11 +328,12 @@ class SegmentationMetrics:
         metrics["precision_mean"] = np.mean(list(precision_recall["precision"].values()))
         metrics["recall_mean"] = np.mean(list(precision_recall["recall"].values()))
         
-        # Hausdorff distance
+        # Hausdorff distance (using fast distance transform)
         hausdorff_distances = self.hausdorff_calculator.compute(predictions, targets, class_wise=True)
         for i, distance in hausdorff_distances.items():
             metrics[f"hausdorff_{self.class_names[i]}"] = distance
-        metrics["hausdorff_mean"] = np.mean([d for d in hausdorff_distances.values() if d != float('inf')])
+        valid_hd = [d for d in hausdorff_distances.values() if d != float('inf')]
+        metrics["hausdorff_mean"] = np.mean(valid_hd) if valid_hd else float('nan')
         
         # Overall metrics
         metrics["dice_score"] = metrics["dice_mean"]  # For compatibility

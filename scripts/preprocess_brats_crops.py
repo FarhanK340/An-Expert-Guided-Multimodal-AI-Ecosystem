@@ -123,10 +123,15 @@ def process_case(case_dir, modalities=["t1n", "t1c", "t2w", "t2f"], crop_size=(6
     return crops
 
 
-def preprocess_dataset(input_dirs, output_dir, split="train", crop_size=(64, 64, 64), num_crops_per_case=10):
-    """Preprocess entire dataset."""
-    output_path = Path(output_dir) / f"brats2024_gli_{split}.h5"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+def preprocess_dataset_with_split(input_dirs, output_dir, train_ratio=0.8, crop_size=(64, 64, 64), num_crops_per_case=10, seed=42):
+    """
+    Preprocess dataset with train/val split from training data only.
+    
+    BraTS 2024 validation data has NO masks, so we split the training data instead.
+    """
+    output_path_train = Path(output_dir) / "brats2024_gli_train.h5"
+    output_path_val = Path(output_dir) / "brats2024_gli_val.h5"
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
     
     # Collect all case directories
     all_cases = []
@@ -134,13 +139,23 @@ def preprocess_dataset(input_dirs, output_dir, split="train", crop_size=(64, 64,
         cases = sorted([d for d in Path(input_dir).iterdir() if d.is_dir()])
         all_cases.extend(cases)
     
-    print(f"Found {len(all_cases)} cases for {split} split")
+    # Shuffle and split cases
+    np.random.seed(seed)
+    np.random.shuffle(all_cases)
+    split_idx = int(len(all_cases) * train_ratio)
+    train_cases = all_cases[:split_idx]
+    val_cases = all_cases[split_idx:]
     
-    # Create HDF5 file
-    with h5py.File(str(output_path), 'w') as h5f:
+    print(f"Total cases: {len(all_cases)}")
+    print(f"  Training: {len(train_cases)} ({100*train_ratio:.0f}%)")
+    print(f"  Validation: {len(val_cases)} ({100*(1-train_ratio):.0f}%)")
+    
+    # Process training data
+    print(f"\n=== Creating training file ===")
+    with h5py.File(str(output_path_train), 'w') as h5f:
         crop_idx = 0
         
-        for case_dir in tqdm(all_cases, desc=f"Processing {split}"):
+        for case_dir in tqdm(train_cases, desc="Training"):
             try:
                 crops = process_case(case_dir, crop_size=crop_size, num_crops=num_crops_per_case)
                 
@@ -157,54 +172,73 @@ def preprocess_dataset(input_dirs, output_dir, split="train", crop_size=(64, 64,
         
         h5f.attrs["num_crops"] = crop_idx
         h5f.attrs["crop_size"] = crop_size
-        h5f.attrs["num_cases"] = len(all_cases)
+        h5f.attrs["num_cases"] = len(train_cases)
     
-    print(f"✅ Saved {crop_idx} crops to {output_path}")
-    print(f"   File size: {output_path.stat().st_size / 1024**3:.2f} GB")
+    print(f"✅ Saved {crop_idx} training crops to {output_path_train}")
+    
+    # Process validation data
+    print(f"\n=== Creating validation file ===")
+    with h5py.File(str(output_path_val), 'w') as h5f:
+        crop_idx = 0
+        
+        for case_dir in tqdm(val_cases, desc="Validation"):
+            try:
+                crops = process_case(case_dir, crop_size=crop_size, num_crops=num_crops_per_case)
+                
+                for crop_vol, crop_mask in crops:
+                    grp = h5f.create_group(f"crop_{crop_idx:06d}")
+                    grp.create_dataset("image", data=crop_vol, compression="gzip", compression_opts=4)
+                    grp.create_dataset("mask", data=crop_mask, compression="gzip", compression_opts=4)
+                    grp.attrs["case_name"] = str(case_dir.name)
+                    crop_idx += 1
+                    
+            except Exception as e:
+                print(f"Error processing {case_dir.name}: {e}")
+                continue
+        
+        h5f.attrs["num_crops"] = crop_idx
+        h5f.attrs["crop_size"] = crop_size
+        h5f.attrs["num_cases"] = len(val_cases)
+    
+    print(f"✅ Saved {crop_idx} validation crops to {output_path_val}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Preprocess BraTS2024 dataset")
+    parser = argparse.ArgumentParser(description="Preprocess BraTS2024 dataset with train/val split")
     parser.add_argument("--output_dir", type=str, default="data/preprocessed",
                         help="Output directory")
     parser.add_argument("--crops_per_case", type=int, default=10,
-                        help="Number of crops per training case")
+                        help="Number of crops per case")
+    parser.add_argument("--train_ratio", type=float, default=0.8,
+                        help="Ratio of cases for training (default: 0.8)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Random seed for reproducible split")
     args = parser.parse_args()
     
-    # Training data (combined folders)
+    # Training data directories (BraTS val data has NO masks, so we split training data)
     train_dirs = [
         "h:/FYP/synapsedownloads/Brats2024/BratsGLI/training_data1_v2",
         "h:/FYP/synapsedownloads/Brats2024/BratsGLI/training_data_additional"
     ]
-    
-    # Validation data
-    val_dir = ["h:/FYP/synapsedownloads/Brats2024/BratsGLI/validation_data"]
     
     print("=" * 60)
     print("BraTS 2024 GLI Preprocessing Pipeline")
     print("=" * 60)
     print(f"Output directory: {args.output_dir}")
     print(f"Crops per case: {args.crops_per_case}")
+    print(f"Train/Val ratio: {args.train_ratio:.0%}/{1-args.train_ratio:.0%}")
+    print()
+    print("NOTE: Using training data only for both train/val splits")
+    print("      (BraTS 2024 validation data has no segmentation masks)")
     print()
     
-    # Process training data
-    print("Processing training data...")
-    preprocess_dataset(
+    preprocess_dataset_with_split(
         input_dirs=train_dirs,
         output_dir=args.output_dir,
-        split="train",
+        train_ratio=args.train_ratio,
         crop_size=(64, 64, 64),
-        num_crops_per_case=args.crops_per_case
-    )
-    
-    # Process validation data
-    print("\nProcessing validation data...")
-    preprocess_dataset(
-        input_dirs=val_dir,
-        output_dir=args.output_dir,
-        split="val",
-        crop_size=(64, 64, 64),
-        num_crops_per_case=5
+        num_crops_per_case=args.crops_per_case,
+        seed=args.seed
     )
     
     print("\n" + "=" * 60)
@@ -214,3 +248,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

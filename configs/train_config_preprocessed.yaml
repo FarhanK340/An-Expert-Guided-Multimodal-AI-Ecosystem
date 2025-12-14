@@ -6,7 +6,7 @@ dataset:
   preprocessed: true  # Use preprocessed HDF5 data
   train_h5: "data/preprocessed/brats2024_gli_train.h5"
   val_h5: "data/preprocessed/brats2024_gli_val.h5"
-  max_crops: 6500  # Use ~6500 crops (4 per case × 1621 cases) for faster training
+  max_crops: 6000  # Use 6000 crops (~3.7 crops per case) for faster training
   modalities: ["T1", "T1ce", "T2", "FLAIR"]
   num_classes: 3  # WT, TC, ET
   class_names: ["Whole Tumor", "Tumor Core", "Enhancing Tumor"]
