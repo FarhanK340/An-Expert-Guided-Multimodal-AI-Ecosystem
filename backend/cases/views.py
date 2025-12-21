@@ -107,3 +107,127 @@ class CaseDeleteView(APIView):
                 {'error': 'Case not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class MRIImageUploadView(APIView):
+    """Upload MRI images for a case."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, case_id):
+        from .models import MRIImage
+        from .mri_serializers import MRIImageSerializer
+        from rest_framework.parsers import MultiPartParser, FormParser
+        
+        try:
+            case = Case.objects.get(case_id=case_id)
+            
+            # Check permission
+            if not request.user.is_admin and case.created_by != request.user:
+                return Response(
+                    {'error': 'Permission denied'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Get uploaded file and modality
+            file = request.FILES.get('file')
+            modality = request.data.get('modality')
+            
+            if not file:
+                return Response(
+                    {'error': 'No file provided'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not modality:
+                return Response(
+                    {'error': 'Modality not specified'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if modality already exists for this case
+            existing = MRIImage.objects.filter(case=case, modality=modality).first()
+            if existing:
+                # Update existing
+                existing.file_path = file
+                existing.file_size = file.size
+                existing.original_filename = file.name
+                existing.save()
+                mri_image = existing
+            else:
+                # Create new
+                mri_image = MRIImage.objects.create(
+                    case=case,
+                    modality=modality,
+                    file_path=file,
+                    file_size=file.size,
+                    original_filename=file.name
+                )
+            
+            serializer = MRIImageSerializer(mri_image, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Case.DoesNotExist:
+            return Response(
+                {'error': 'Case not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class MRIImageListView(APIView):
+    """List MRI images for a case."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, case_id):
+        from .models import MRIImage
+        from .mri_serializers import MRIImageSerializer
+        
+        try:
+            case = Case.objects.get(case_id=case_id)
+            
+            # Check permission
+            if not request.user.is_admin and case.created_by != request.user:
+                return Response(
+                    {'error': 'Permission denied'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            images = MRIImage.objects.filter(case=case)
+            serializer = MRIImageSerializer(images, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Case.DoesNotExist:
+            return Response(
+                {'error': 'Case not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SegmentationResultView(APIView):
+    """Get segmentation results for a case."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, case_id):
+        return Response({"message": f"Segmentation result for {case_id} - To be implemented"})
+
+
+class VisualizationListView(APIView):
+    """List 2D visualizations for a case."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, case_id):
+        return Response({"message": f"Visualizations for {case_id} - To be implemented"})
+
+
+class FeedbackCreateView(APIView):
+    """Submit feedback for a case."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, case_id):
+        return Response({"message": f"Feedback for case {case_id} - To be implemented"})
+
+
+class FeedbackListView(APIView):
+    """List all feedback."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        return Response({"message": "Feedback list - To be implemented"})
