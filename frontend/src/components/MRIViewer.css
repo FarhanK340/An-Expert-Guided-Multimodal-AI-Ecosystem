@@ -1,0 +1,216 @@
+/* MRI Viewer Overlay */
+.mri-viewer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* MRI Viewer Container */
+.mri-viewer-container {
+    width: 95vw;
+    height: 95vh;
+    background-color: #0F172A;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+.mri-viewer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mri-viewer-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #F8FAFC;
+    margin: 0;
+}
+
+.mri-viewer-subtitle {
+    font-size: 0.875rem;
+    color: #94A3B8;
+    margin: 0.25rem 0 0 0;
+}
+
+.mri-viewer-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    cursor: pointer;
+    color: #F8FAFC;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mri-viewer-close:hover {
+    background: rgba(239, 68, 68, 0.8);
+    transform: scale(1.05);
+}
+
+/* Controls */
+.mri-viewer-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-xl);
+    background-color: #1E293B;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.viewer-control-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: #F8FAFC;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.viewer-control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateY(-1px);
+}
+
+.viewer-control-primary {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    border-color: #3B82F6;
+}
+
+.viewer-control-primary:hover {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    border-color: #2563EB;
+}
+
+/* Canvas Container */
+.mri-viewer-canvas-container {
+    flex: 1;
+    position: relative;
+    background-color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mri-viewer-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Loading State */
+.mri-viewer-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    color: #94A3B8;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(59, 130, 246, 0.2);
+    border-top-color: #3B82F6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error State */
+.mri-viewer-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: #EF4444;
+    text-align: center;
+}
+
+/* Info Bar */
+.mri-viewer-info {
+    display: flex;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-xl);
+    background-color: #1E293B;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.viewer-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.viewer-info-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #94A3B8;
+}
+
+.viewer-info-value {
+    font-size: 0.875rem;
+    color: #F8FAFC;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mri-viewer-container {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .mri-viewer-controls {
+        flex-wrap: wrap;
+    }
+
+    .viewer-control-btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .mri-viewer-info {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}
