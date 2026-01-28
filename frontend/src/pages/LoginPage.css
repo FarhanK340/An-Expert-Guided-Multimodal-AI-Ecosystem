@@ -1,0 +1,109 @@
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--neutral-50) 100%);
+    padding: var(--spacing-xl);
+}
+
+.login-container {
+    width: 100%;
+    max-width: 440px;
+}
+
+.login-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.login-header {
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-xl);
+    background: linear-gradient(180deg, var(--primary-50) 0%, white 100%);
+}
+
+.login-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--spacing-lg);
+}
+
+.login-logo-icon {
+    color: white;
+}
+
+.login-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--neutral-900);
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.login-subtitle {
+    font-size: 0.9375rem;
+    color: var(--neutral-600);
+    margin: 0;
+}
+
+.login-form {
+    padding: var(--spacing-xl);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--neutral-700);
+    margin-bottom: var(--spacing-sm);
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: var(--spacing-md);
+    color: var(--neutral-400);
+    pointer-events: none;
+}
+
+.input-with-icon {
+    padding-left: calc(var(--spacing-md) + 24px);
+}
+
+.login-button {
+    width: 100%;
+    margin-top: var(--spacing-md);
+}
+
+.login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.login-footer {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background-color: var(--neutral-50);
+    border-top: 1px solid var(--neutral-200);
+}
+
+.footer-text {
+    font-size: 0.75rem;
+    color: var(--neutral-500);
+    margin: 0.25rem 0;
+}
