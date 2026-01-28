@@ -1,0 +1,159 @@
+.results-page {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* Metrics */
+.metrics-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.metric-item {
+    padding: 1rem;
+    background-color: #F9FAFB;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.metric-confidence {
+    font-size: 0.875rem;
+    color: #3B82F6;
+    font-weight: 500;
+}
+
+/* Visualization */
+.visualization-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.visualization-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: #F9FAFB;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+}
+
+.visualization-label {
+    flex: 1;
+    font-weight: 500;
+    color: #374151;
+}
+
+.visualization-item .btn {
+    min-width: 120px;
+}
+
+/* Ground Truth Upload */
+.upload-section {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.info-text {
+    color: #6B7280;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+}
+
+.ground-truth-info {
+    padding: 1rem;
+}
+
+.success-message {
+    display: inline-flex;
+    align-items: center;
+    background-color: #D1FAE5;
+    color: #065F46;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.upload-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: #F9FAFB;
+    border-radius: 6px;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 0.875rem;
+    color: #111827;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .results-page {
+        padding: 1rem;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .visualization-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .visualization-item .btn {
+        width: 100%;
+    }
+}

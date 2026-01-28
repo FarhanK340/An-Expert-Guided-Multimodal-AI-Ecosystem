@@ -247,6 +247,37 @@ class ApiService {
         return await this.request(`/cases/${caseId}/images/`);
     }
 
+    // Inference APIs
+    async startPrediction(caseId: string): Promise<any> {
+        return await this.request(`/inference/predict/${caseId}/`, {
+            method: 'POST',
+        });
+    }
+
+    async getSegmentationResult(caseId: string): Promise<any> {
+        return await this.request(`/inference/result/${caseId}/`);
+    }
+
+    async uploadGroundTruth(caseId: string, file: File): Promise<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const url = `${API_BASE_URL}/inference/upload-ground-truth/${caseId}/`;
+        const headers: Record<string, string> = {};
+
+        if (this.accessToken) {
+            headers['Authorization'] = `Bearer ${this.accessToken}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+
+        return await this.handleResponse(response);
+    }
+
     // Check if user is authenticated
     isAuthenticated(): boolean {
         return !!this.accessToken;

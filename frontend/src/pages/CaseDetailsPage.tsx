@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, User, Activity, Eye, Download, ArrowLeft, Trash2 } from 'lucide-react';
+import { Calendar, User, Activity, Eye, Download, ArrowLeft, Trash2, Zap } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 import MRIViewer from '../components/MRIViewer';
@@ -17,6 +17,7 @@ export default function CaseDetailsPage() {
     const [viewerImage, setViewerImage] = useState<{ url: string; modality: string } | null>(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isPredicting, setIsPredicting] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -52,6 +53,22 @@ export default function CaseDetailsPage() {
             showError(err.message || 'Failed to delete case');
             setIsDeleting(false);
             setShowDeleteDialog(false);
+        }
+    };
+
+    const handleRunPrediction = async () => {
+        if (!id) return;
+
+        setIsPredicting(true);
+        try {
+            await apiService.startPrediction(id);
+            success('Prediction completed successfully!');
+            // Navigate to results page
+            navigate(`/cases/${id}/results`);
+        } catch (err: any) {
+            showError(err.message || 'Failed to run prediction');
+        } finally {
+            setIsPredicting(false);
         }
     };
 
@@ -111,6 +128,17 @@ export default function CaseDetailsPage() {
                     <span className={getStatusBadge(caseData.status)}>
                         {caseData.status}
                     </span>
+                    {mriImages.length === 4 && (
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleRunPrediction}
+                            disabled={isPredicting}
+                            style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
+                        >
+                            <Zap size={18} />
+                            {isPredicting ? 'Running...' : 'Run Prediction'}
+                        </button>
+                    )}
                     <button
                         className="btn btn-outline"
                         onClick={() => setShowDeleteDialog(true)}

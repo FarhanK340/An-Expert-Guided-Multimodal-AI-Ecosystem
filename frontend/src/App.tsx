@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import CasesPage from './pages/CasesPage';
 import NewCasePage from './pages/NewCasePage';
 import CaseDetailsPage from './pages/CaseDetailsPage';
+import ResultsPage from './pages/ResultsPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import './App.css';
@@ -43,6 +44,11 @@ function App() {
             <Route path="/cases/:id" element={
               <DashboardLayout>
                 <CaseDetailsPage />
+              </DashboardLayout>
+            } />
+            <Route path="/cases/:id/results" element={
+              <DashboardLayout>
+                <ResultsPage />
               </DashboardLayout>
             } />
             <Route path="/reports" element={

@@ -6,6 +6,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # New Inference Endpoints
+    path('predict/<uuid:case_id>/', views.PredictSegmentationView.as_view(), name='predict_segmentation'),
+    path('result/<uuid:case_id>/', views.GetSegmentationResultView.as_view(), name='get_result'),
+    path('upload-ground-truth/<uuid:case_id>/', views.UploadGroundTruthView.as_view(), name='upload_ground_truth'),
+    
     # Inference Tasks
     path('segment/', views.StartSegmentationView.as_view(), name='start_segmentation'),
     path('tasks/', views.TaskListView.as_view(), name='task_list'),

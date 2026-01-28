@@ -35,7 +35,7 @@ export default function NewCasePage() {
         if (lower.includes('t1ce') || lower.includes('t1c')) return 't1ce';
         if (lower.includes('t1')) return 't1';
         if (lower.includes('t2')) return 't2';
-        if (lower.includes('flair') || lower.includes('t2f')) return 'flair';
+        if (lower.includes('t2f') || lower.includes('flair')) return 'flair';
         return null;
     };
 
