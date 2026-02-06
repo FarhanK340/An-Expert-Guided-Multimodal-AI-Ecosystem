@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
@@ -213,11 +214,12 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--patience", type=int, default=15, help="Early stopping patience")
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
     args = parser.parse_args()
     
     # Auto-construct paths if not specified
     # Prefer per-modality files (new format), fall back to combined (old format)
-    data_dir = Path("data/preprocessed")
+    data_dir = Path("../data/preprocessed")
     if args.train_data is None:
         per_modality_train = data_dir / f"brats2024_gli_{args.modality}_train.h5"
         combined_train = data_dir / "brats2024_gli_train.h5"
@@ -275,9 +277,33 @@ def main():
     
     # Training loop with early stopping
     best_dice = 0.0
+    start_epoch = 1
     epochs_without_improvement = 0
     
-    for epoch in range(1, args.epochs + 1):
+    # Resume from checkpoint if specified
+    if args.resume:
+        if os.path.isfile(args.resume):
+            logger.info(f"Loading checkpoint from {args.resume}")
+            checkpoint = torch.load(args.resume, map_location=device)
+            
+            # Load states
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            
+            # Restore training state
+            start_epoch = checkpoint['epoch'] + 1
+            best_dice = checkpoint.get('best_dice', 0.0)
+            
+            # Check if we are already done
+            if start_epoch > args.epochs:
+                logger.info(f"Checkpoint is already at epoch {checkpoint['epoch']}, which is >= target epochs {args.epochs}")
+                return
+                
+            logger.info(f"Resuming from epoch {start_epoch} (Best Dice: {best_dice:.4f})")
+        else:
+            logger.warning(f"Checkpoint file not found: {args.resume}. Starting from scratch.")
+    
+    for epoch in range(start_epoch, args.epochs + 1):
         logger.info(f"\n=== Epoch {epoch}/{args.epochs} ===")
         
         # Train
@@ -323,6 +349,17 @@ def main():
             if epochs_without_improvement >= args.patience:
                 logger.info(f"Early stopping after {epochs_without_improvement} epochs without improvement")
                 break
+        
+        # Save 'last' checkpoint every epoch
+        last_checkpoint_path = checkpoint_dir / f"expert_{args.modality}_last.pth"
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'best_dice': best_dice,
+            'modality': args.modality,
+            # We don't save val_metrics here as they might not be computed this epoch
+        }, last_checkpoint_path)
     
     logger.info(f"\n=== Training Complete ===")
     logger.info(f"Best Dice: {best_dice:.4f}")

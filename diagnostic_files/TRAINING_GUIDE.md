@@ -30,8 +30,8 @@ Edit `scripts/preprocess_brats_crops.py` lines 236-239:
 
 ```python
 train_dirs = [
-    "<your_data_path>/Brats2024/BratsGLI/training_data1_v2",
-    "<your_data_path>/Brats2024/BratsGLI/training_data_additional"
+    "./../../dataset_script/brats_data/brats2024/brats2024-brats-gli-trainingdata",
+    "./../../dataset_script/brats_data/brats2024/brats2024-brats-gli-additionaltrainingdata"
 ]
 ```
 
@@ -54,7 +54,7 @@ Creates 8 separate HDF5 files (one per modality per split) for optimal training 
 .\.venv\Scripts\python.exe scripts/preprocess_brats_crops.py --crop_size 96 --crops_per_case 10
 ```
 
-**Output files** in `data/preprocessed/`:
+**Output files** in `./../data/preprocessed/`:
 - `brats2024_gli_T1_train.h5`, `brats2024_gli_T1_val.h5`
 - `brats2024_gli_T1ce_train.h5`, `brats2024_gli_T1ce_val.h5`
 - `brats2024_gli_T2_train.h5`, `brats2024_gli_T2_val.h5`
@@ -67,20 +67,35 @@ Creates 8 separate HDF5 files (one per modality per split) for optimal training 
 Train each modality expert separately. **Use batch_size 5** (optimal for most GPUs).
 
 ```powershell
+# Generic command template
+# .\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality [MODALITY] --epochs 100 --batch_size 5
+
 # T1 Expert (~2-3 hours)
-.\.venv\Scripts\python.exe -m src.training.train_single_expert --modality T1 --epochs 100 --batch_size 5
+.\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality T1 --epochs 100 --batch_size 5
 
 # T1ce Expert (~2-3 hours)
-.\.venv\Scripts\python.exe -m src.training.train_single_expert --modality T1ce --epochs 100 --batch_size 5
+.\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality T1ce --epochs 100 --batch_size 5
 
 # T2 Expert (~2-3 hours)
-.\.venv\Scripts\python.exe -m src.training.train_single_expert --modality T2 --epochs 100 --batch_size 5
+.\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality T2 --epochs 100 --batch_size 5
 
 # FLAIR Expert (~2-3 hours)
-.\.venv\Scripts\python.exe -m src.training.train_single_expert --modality FLAIR --epochs 100 --batch_size 5
+.\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality FLAIR --epochs 100 --batch_size 5
 ```
 
 **Checkpoints saved to:** `experiments/checkpoints/experts/expert_{modality}_best.pth`
+
+### Resuming Training
+
+If training is interrupted, you can resume from the last checkpoint (best or latest):
+
+```powershell
+# Continue training T1ce from best checkpoint
+.\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality T1ce --epochs 100 --batch_size 5 --resume "experiments/checkpoints/experts/expert_T1ce_best.pth"
+
+# Continue from the absolute last saved epoch (useful if not the best)
+.\.venv\Scripts\python.exe diagnostic_files/train_fixed.py --modality T1ce --epochs 100 --batch_size 5 --resume "experiments/checkpoints/experts/expert_T1ce_last.pth"
+```
 
 ---
 
