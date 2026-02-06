@@ -1,0 +1,43 @@
+# Continual Learning Config for BratsMEN
+# Trains on Meningioma while preserving Glioma knowledge
+
+model:
+  modalities: ["T1", "T1ce", "T2", "FLAIR"]
+  in_channels: 1
+  num_classes: 4  # WT, TC, ET, GTV (expanded from 3)
+  base_channels: 32
+  depth: 4
+  attention_type: "cbam"
+
+training:
+  epochs: 30
+  batch_size: 4
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  num_workers: 0  # Avoid multiprocessing issues
+
+continual_learning:
+  # EWC settings
+  use_ewc: true
+  ewc_lambda: 5000  # Regularization strength (higher = more forgetting prevention)
+  fisher_samples: 500  # Samples to estimate Fisher Information
+  
+  # Replay buffer settings
+  use_replay: true
+  replay_ratio: 0.2  # 20% of each batch is old data
+  
+  # Experts to freeze (only train T1c expert for MEN)
+  freeze_experts: ["T1", "T2", "FLAIR"]
+
+data:
+  # New task (MEN)
+  new_train: "data/preprocessed/bratsmen_train.h5"
+  new_val: "data/preprocessed/bratsmen_val.h5"
+  
+  # Old task (GLI) - for EWC and replay
+  old_train: "data/preprocessed/brats2024_gli_train.h5"
+  old_val: "data/preprocessed/brats2024_gli_val.h5"
+
+checkpoints:
+  save_dir: "experiments/checkpoints"
+  base_model: "experiments/checkpoints/best_model.pth"
