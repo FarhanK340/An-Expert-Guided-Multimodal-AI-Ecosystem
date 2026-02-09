@@ -1,0 +1,47 @@
+# Report Generation Training Configuration
+
+model:
+  name: "google/gemma-2b-it"
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+
+training:
+  epochs: 15
+  batch_size: 4
+  gradient_accumulation_steps: 2
+  learning_rate: 2.0e-4
+  lr_scheduler: "cosine"
+  warmup_steps: 100
+  weight_decay: 0.01
+  
+data:
+  max_length: 512
+  train_file: "data/reports/train.jsonl"
+  val_file: "data/reports/val.jsonl"
+  test_file: "data/reports/test.jsonl"
+  
+  # Dataset generation parameters
+  num_samples: 1000
+  train_ratio: 0.70
+  val_ratio: 0.15
+  # test_ratio is automatically 0.15 (1 - train - val)
+
+output:
+  checkpoint_dir: "models/report_generator"
+  results_dir: "results/report_generation"
+  save_steps: 200
+  eval_steps: 200
+  logging_steps: 50
+  
+optimization:
+  fp16: true  # Use mixed precision on CUDA
+  gradient_checkpointing: false
+  
+# Inference parameters
+inference:
+  max_new_tokens: 512
+  temperature: 0.7
+  top_p: 0.9
+  do_sample: true

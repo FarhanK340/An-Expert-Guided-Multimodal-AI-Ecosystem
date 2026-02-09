@@ -1,0 +1,227 @@
+[
+  {
+    "json_data": {
+      "case_id": "BraTS-GLI-60351",
+      "imaging_parameters": {
+        "modalities": [
+          "T1",
+          "T1ce",
+          "T2",
+          "FLAIR"
+        ],
+        "scanner": "3T MRI",
+        "acquisition_date": "2024-01-15"
+      },
+      "segmentation_results": {
+        "enhancing_tumor": {
+          "volume_cm3": 21.7,
+          "confidence": 0.89,
+          "centroid": [
+            119,
+            126,
+            75
+          ]
+        },
+        "tumor_core": {
+          "volume_cm3": 35.0,
+          "confidence": 0.88,
+          "centroid": [
+            90,
+            120,
+            96
+          ]
+        },
+        "whole_tumor": {
+          "volume_cm3": 104.3,
+          "confidence": 0.95,
+          "centroid": [
+            100,
+            112,
+            70
+          ]
+        }
+      },
+      "anatomical_mapping": {
+        "laterality": "right",
+        "enhancing_tumor_regions": [
+          {
+            "name": "Left Frontal Lobe",
+            "overlap_percent": 32.5,
+            "volume_ml": 7.05
+          },
+          {
+            "name": "Left Parietal Lobe",
+            "overlap_percent": 17.0,
+            "volume_ml": 3.69
+          },
+          {
+            "name": "Cerebellum",
+            "overlap_percent": 16.1,
+            "volume_ml": 3.49
+          }
+        ],
+        "primary_location": "Left Frontal Lobe"
+      },
+      "mass_effect": false,
+      "clinical_history": "Seizure disorder workup",
+      "model_metadata": {
+        "architecture": "MoME+",
+        "inference_time_sec": 3.43,
+        "cuda_available": true
+      }
+    },
+    "reference": "EXAMINATION: MRI Brain\nINDICATION: Seizure disorder workup\n\nFINDINGS:\nenhancing mass lesion identified, measuring 21.7 cm\u00b3 located in the Left Frontal Lobe occupying approximately 32.5% of the Left Frontal Lobe.\nThe tumor core measures 35.0 cm\u00b3.\nAssociated peritumoral edema (69.3 cm\u00b3) is present.\nPredominantly right-sided distribution.\nNo significant midline shift is observed.\n\nIMPRESSION:\nBrain mass with enhancement and peritumoral edema, most consistent with high-grade glioma. Further evaluation with tissue sampling is recommended.",
+    "template": "CLINICAL HISTORY: Seizure disorder workup\n\nTECHNIQUE: Multi-sequence MRI brain examination including T1, T1ce, T2, FLAIR.\n\nFINDINGS:\nA enhancing tumor measuring 21.7 cm\u00b3 is identified centered in the Left Frontal Lobe with 32.5% regional involvement.\nThe tumor core measures 35.0 cm\u00b3.\nPeritumoral edema extending into adjacent white matter measuring approximately 69.3 cm\u00b3.\nThe lesion is right hemispheric in distribution.\nNo significant midline shift is observed.\n\nIMPRESSION:\nThe imaging findings are consistent with a primary brain neoplasm, likely high-grade glioma given the enhancement pattern and degree of edema. Clinical correlation and tissue diagnosis recommended.",
+    "llm_generated": "eizure disorder workup\n\nTECHNIQUE: 3T MRI\n\nRESULT: MRI BRAIN WITH AND WITHOUT CONTRAST\n\nCLINICAL HISTORY: Seizure disorder workup\n\nTECHNIQUE: 3T MRI\n\nEXAMINATION: BRAIN\n\nINDICATION: Seizure disorder workup\n\nPROTOCOL: MRI BRAIN WITH AND WITHOUT CONTRAST\n\nRESULTS:\n\nMRI BRAIN WITH CONTRAST\n\nPRESENTATION: BRAIN\n\nAREA ASSESSED: BRAIN\n\nPROTOCOL: MRI BRAIN WITH AND WITHOUT CONTRAST\n\nFINDINGS:\n\nTUMOR\n\nLOCATION: Frontal lobe\n\nSIZE: 21.7 cm3\n\nCONFIDENCE: 0.89\n\nCENTROID:\n    X: 119\n    Y: 126\n    Z: 75\n\nTISSUE TYPE: Normal\n\nMARGIN:\n    LEFT: 1 cm\n\nEXTENT:\n    LENGTH: 3 cm\n    WIDTH: 4 cm\n\nHISTOLOGY:\nNORMAL\n\nTISSUE TYPE: Normal\n\nMARGIN:\n    LEFT: 0.5 cm\n\nEXTENT:\n    LENGTH: 2 cm\n    WIDTH: 3 cm\n\nNORMAL\n\nMICROSCOPE EXAMINATION:\n\nNO SIGNIFICANT ABNORMAL FINDINGS\n\nCONCLUSION:\nMRI BRAIN WITH CONTRAST\n\nCLINICAL HISTORY: Seizure disorder workup\n\nTECHNIQUE: 3T MRI\n\nRESULTS:\n\nMRI BRAIN WITHOUT CONTRAST\n\nPRESENTATION: BRAIN\n\nAREA ASSESSED: BRAIN\n\nPROTOCOL: MRI BRAIN WITHOUT CONTRAST\n\nFINDINGS:\n\nTUMOR\n\nLOCATION: Frontal lobe\n\nSIZE: 35.0 cm3\n\nCONFIDENCE: 0.88\n\nCENTROID:\n    X: 90\n    Y: 120\n    Z: 96\n\nTISSUE TYPE: Normal\n\nMARGIN:\n    LEFT: 1 cm\n\nEXTENT:\n    LENGTH: 4 cm\n    WIDTH: 5 cm\n\nHISTOLOGY:\nNORMAL\n\nTISSUE TYPE: Normal\n\nMARGIN:\n    LEFT: 0.5 cm\n\nEXTENT:\n    LENGTH: 2 cm\n    WIDTH: 3 cm\n\nNORMAL\n\nMICROSCOPE EXAMINATION:\n\nNO SIGNIFICANT ABNORMAL FINDINGS\n\nCONCLUSION:\nMRI BRAIN WITHOUT CONTRAST\n\nCLINICAL HISTORY: Seizure disorder workup\n\nTECHNIQUE: 3T MRI\n\nRESULTS:\n\nMRI BRAIN WITH CONTR"
+  },
+  {
+    "json_data": {
+      "case_id": "BraTS-GLI-58906",
+      "imaging_parameters": {
+        "modalities": [
+          "T1",
+          "T1ce",
+          "T2",
+          "FLAIR"
+        ],
+        "scanner": "3T MRI",
+        "acquisition_date": "2024-01-15"
+      },
+      "segmentation_results": {
+        "enhancing_tumor": {
+          "volume_cm3": 10.5,
+          "confidence": 0.92,
+          "centroid": [
+            80,
+            135,
+            95
+          ]
+        },
+        "tumor_core": {
+          "volume_cm3": 21.6,
+          "confidence": 0.84,
+          "centroid": [
+            89,
+            107,
+            62
+          ]
+        },
+        "whole_tumor": {
+          "volume_cm3": 45.5,
+          "confidence": 0.92,
+          "centroid": [
+            80,
+            136,
+            98
+          ]
+        }
+      },
+      "anatomical_mapping": {
+        "laterality": "right",
+        "enhancing_tumor_regions": [
+          {
+            "name": "Left Thalamus",
+            "overlap_percent": 55.7,
+            "volume_ml": 5.85
+          },
+          {
+            "name": "Right Thalamus",
+            "overlap_percent": 49.8,
+            "volume_ml": 5.23
+          },
+          {
+            "name": "Right Parietal Lobe",
+            "overlap_percent": 46.5,
+            "volume_ml": 4.88
+          }
+        ],
+        "primary_location": "Left Thalamus"
+      },
+      "mass_effect": false,
+      "clinical_history": "Seizure disorder workup",
+      "model_metadata": {
+        "architecture": "MoME+",
+        "inference_time_sec": 3.6,
+        "cuda_available": true
+      }
+    },
+    "reference": "CLINICAL HISTORY: Seizure disorder workup\n\nTECHNIQUE: Multi-sequence MRI brain examination including T1, T1ce, T2, FLAIR.\n\nFINDINGS:\nA enhancing tumor measuring 10.5 cm\u00b3 is identified centered in the Left Thalamus with 55.7% regional involvement.\nThe tumor core measures 21.6 cm\u00b3.\nPeritumoral edema extending into adjacent white matter measuring approximately 23.9 cm\u00b3.\nThe lesion is right hemispheric in distribution.\nNo significant midline shift is observed.\n\nIMPRESSION:\nThe imaging findings are consistent with a primary brain neoplasm, likely high-grade glioma given the enhancement pattern and degree of edema. Clinical correlation and tissue diagnosis recommended.",
+    "template": "CLINICAL HISTORY: Seizure disorder workup\n\nTECHNIQUE: Multi-sequence MRI brain examination including T1, T1ce, T2, FLAIR.\n\nFINDINGS:\nA enhancing tumor measuring 10.5 cm\u00b3 is identified centered in the Left Thalamus with 55.7% regional involvement.\nThe tumor core measures 21.6 cm\u00b3.\nPeritumoral edema extending into adjacent white matter measuring approximately 23.9 cm\u00b3.\nThe lesion is right hemispheric in distribution.\nNo significant midline shift is observed.\n\nIMPRESSION:\nThe imaging findings are consistent with a primary brain neoplasm, likely high-grade glioma given the enhancement pattern and degree of edema. Clinical correlation and tissue diagnosis recommended.",
+    "llm_generated": ""
+  },
+  {
+    "json_data": {
+      "case_id": "BraTS-GLI-18288",
+      "imaging_parameters": {
+        "modalities": [
+          "T1",
+          "T1ce",
+          "T2",
+          "FLAIR"
+        ],
+        "scanner": "3T MRI",
+        "acquisition_date": "2024-01-15"
+      },
+      "segmentation_results": {
+        "enhancing_tumor": {
+          "volume_cm3": 20.1,
+          "confidence": 0.88,
+          "centroid": [
+            117,
+            102,
+            64
+          ]
+        },
+        "tumor_core": {
+          "volume_cm3": 38.7,
+          "confidence": 0.86,
+          "centroid": [
+            102,
+            132,
+            66
+          ]
+        },
+        "whole_tumor": {
+          "volume_cm3": 88.1,
+          "confidence": 0.91,
+          "centroid": [
+            98,
+            119,
+            98
+          ]
+        }
+      },
+      "anatomical_mapping": {
+        "laterality": "left",
+        "enhancing_tumor_regions": [
+          {
+            "name": "Right Putamen",
+            "overlap_percent": 46.0,
+            "volume_ml": 9.25
+          },
+          {
+            "name": "Right Occipital Lobe",
+            "overlap_percent": 29.5,
+            "volume_ml": 5.93
+          },
+          {
+            "name": "Left Parietal Lobe",
+            "overlap_percent": 15.9,
+            "volume_ml": 3.2
+          }
+        ],
+        "primary_location": "Right Putamen"
+      },
+      "mass_effect": true,
+      "clinical_history": "Follow-up for known glioma",
+      "model_metadata": {
+        "architecture": "MoME+",
+        "inference_time_sec": 4.03,
+        "cuda_available": true
+      }
+    },
+    "reference": "BRAIN MRI REPORT\n\nClinical History: Follow-up for known glioma\n\nTechnique: Multiparametric MRI including T1, T1ce, T2, FLAIR sequences.\n\nFindings:\nAn abnormal enhancing mass measuring 20.1 cm\u00b3 is present within the Right Putamen with significant involvement (46.0%).\nThe tumor core measures 38.7 cm\u00b3.\nThere is vasogenic edema measuring 49.4 cm\u00b3.\nThe tumor is left hemispheric.\nThere is associated mass effect with midline shift.\n\nImpression:\nPrimary brain tumor with imaging characteristics consistent with high-grade glioma. Correlation with clinical presentation and consideration of tissue diagnosis is advised.",
+    "template": "CLINICAL HISTORY: Follow-up for known glioma\n\nTECHNIQUE: Multi-sequence MRI brain examination including T1, T1ce, T2, FLAIR.\n\nFINDINGS:\nA enhancing tumor measuring 20.1 cm\u00b3 is identified centered in the Right Putamen with 46.0% regional involvement.\nThe tumor core measures 38.7 cm\u00b3.\nPeritumoral edema extending into adjacent white matter measuring approximately 49.4 cm\u00b3.\nThe lesion is left hemispheric in distribution.\nThere is associated mass effect with midline shift.\n\nIMPRESSION:\nThe imaging findings are consistent with a primary brain neoplasm, likely high-grade glioma given the enhancement pattern and degree of edema. Clinical correlation and tissue diagnosis recommended.",
+    "llm_generated": "ICAL HISTORY: Follow-up for known glioma\n\nTECHNIQUE: 3T MRI\n\nPROTOCOL: MRI BRAIN\n\nINDICATION: Clinical history of glioma\n\nRESULTS:\n\nMRI BRAIN\n\nCLINICAL HISTORY: Follow-up for known glioma\n\nTECHNIQUE: 3T MRI\n\nPROTOCOL: MRI BRAIN\n\nINDICATION: Clinical history of glioma\n\nRESULTS:\n\nBRAIN MRI REPORT\n\nCLINICAL HISTORY: Follow-up for known glioma\n\nTECHNIQUE: 3T MRI\n\nPROTOCOL: MRI BRAIN\n\nINDICATION: Clinical history of glioma\n\nRESULTS:\n\nMRI BRAIN\n\nEXAMINATION: MRI brain\n\nCONTRAST: T1, T1CE, T2, FLAIR\n\nDURATION: 18288\n\nCONCLUSION: Clinical history of glioma\n\nTECHNIQUE: 3T MRI\n\nPROTOCOL: MRI BRAIN\n\nINDICATION: Clinical history of glioma\n\nRESULTS:\n\nMRI BRAIN\n\nEXAMINATION: MRI brain\n\nCONTRAST: T1, T1CE, T2, FLAIR\n\nDURATION: 18288\n\nCONCLUSION: CLINICAL HISTORY OF GLIOMA\n\nCLINICAL HISTORY: Follow-up for known glioma\n\nTECHNIQUE: 3T MRI\n\nPROTOCOL: MRI BRAIN\n\nINDICATION: Clinical history of glioma\n\nRESULTS:\n\nMRI BRAIN\n\nCLINICAL HISTORY: Follow-up for known glioma\n\nTECHNIQUE: 3T MRI\n\nPROTOCOL: MRI BRAIN\n\nINDICATION: Clinical history of glioma\n\nRESULTS:\n\nMRI BRAIN\n\nEXAMINATION: MRI brain\n\nCONTRAST: T1, T1CE, T2, FLAIR\n\nDURATION: 18288\n\nCONCLUSION: CLINICAL HISTORY OF GLIOMA"
+  }
+]
