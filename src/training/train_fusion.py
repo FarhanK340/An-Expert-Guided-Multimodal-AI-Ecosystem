@@ -86,11 +86,12 @@ class MultiModalityDataset(Dataset):
         }
 
 
-def load_expert(checkpoint_path: str, device: torch.device) -> ModalityExpert:
+def load_expert(checkpoint_path: str, modality: str, device: torch.device) -> ModalityExpert:
     """Load a pre-trained expert from checkpoint."""
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     
     expert = ModalityExpert(
+        modality=modality,
         in_channels=1,
         num_classes=3,
         base_channels=32,
@@ -99,7 +100,6 @@ def load_expert(checkpoint_path: str, device: torch.device) -> ModalityExpert:
     expert.load_state_dict(checkpoint['model_state_dict'])
     expert.to(device)
     
-    modality = checkpoint.get('modality', 'Unknown')
     best_dice = checkpoint.get('best_dice', 0)
     logger.info(f"Loaded {modality} expert (Dice: {best_dice:.4f})")
     
@@ -229,10 +229,10 @@ def main():
     # Load pre-trained experts
     logger.info("Loading pre-trained experts...")
     experts = {
-        "T1": load_expert(args.expert_t1, device),
-        "T1ce": load_expert(args.expert_t1ce, device),
-        "T2": load_expert(args.expert_t2, device),
-        "FLAIR": load_expert(args.expert_flair, device)
+        "T1": load_expert(args.expert_t1, "T1", device),
+        "T1ce": load_expert(args.expert_t1ce, "T1ce", device),
+        "T2": load_expert(args.expert_t2, "T2", device),
+        "FLAIR": load_expert(args.expert_flair, "FLAIR", device)
     }
     
     # Create MoME model with expert weights
@@ -253,8 +253,9 @@ def main():
     train_dataset = MultiModalityDataset(args.train_data, transform=train_transforms)
     val_dataset = MultiModalityDataset(args.val_data)
     
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2, pin_memory=True)
+    # num_workers=0 on Windows for HDF5, pin_memory=False for HDF5
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=False)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0, pin_memory=False)
     
     logger.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
     
