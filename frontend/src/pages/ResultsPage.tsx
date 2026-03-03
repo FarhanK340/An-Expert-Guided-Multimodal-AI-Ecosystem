@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Download, Eye, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Upload, Download, Eye, BarChart3, FileText, Loader2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 import MRIViewer from '../components/MRIViewer';
@@ -17,6 +17,8 @@ export default function ResultsPage() {
     const [viewerImage, setViewerImage] = useState<{ url: string; modality: string } | null>(null);
     const [isUploadingGT, setIsUploadingGT] = useState(false);
     const [hasGroundTruth, setHasGroundTruth] = useState(false);
+    const [groundTruthUrl, setGroundTruthUrl] = useState<string | null>(null);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -34,9 +36,13 @@ export default function ResultsPage() {
             setCaseData(fetchedCase);
             setResultData(fetchedResult);
 
-            // Check if ground truth exists
-            if (fetchedResult.structured_findings?.ground_truth_mask) {
+            // Check if ground truth exists and grab its URL
+            const gtPath = fetchedResult.structured_findings?.ground_truth_mask;
+            if (gtPath) {
                 setHasGroundTruth(true);
+                // Build absolute URL — gtPath may be relative or absolute
+                const url = gtPath.startsWith('http') ? gtPath : `http://localhost:8000/media/${gtPath.replace(/^\/media\//, '')}`;
+                setGroundTruthUrl(url);
             }
         } catch (err: any) {
             showError(err.message || 'Failed to load results');
@@ -49,7 +55,6 @@ export default function ResultsPage() {
         const file = event.target.files?.[0];
         if (!file || !id) return;
 
-        // Validate file type
         if (!file.name.endsWith('.nii') && !file.name.endsWith('.nii.gz')) {
             showError('Please upload a NIfTI file (.nii or .nii.gz)');
             return;
@@ -57,15 +62,33 @@ export default function ResultsPage() {
 
         setIsUploadingGT(true);
         try {
-            await apiService.uploadGroundTruth(id, file);
+            const response = await apiService.uploadGroundTruth(id, file);
             success('Ground truth uploaded successfully');
             setHasGroundTruth(true);
-            // Refresh results to get updated data
+            // Grab URL from response if available, otherwise re-fetch
+            if (response?.url) {
+                const url = response.url.startsWith('http') ? response.url : `http://localhost:8000${response.url}`;
+                setGroundTruthUrl(url);
+            }
             await fetchResults();
         } catch (err: any) {
             showError(err.message || 'Failed to upload ground truth');
         } finally {
             setIsUploadingGT(false);
+        }
+    };
+
+    const handleGenerateReport = async () => {
+        if (!id) return;
+        setIsGeneratingReport(true);
+        try {
+            const result = await apiService.generateReport(id);
+            success('Report generated successfully!');
+            navigate(`/reports/${result.report?.reportId}`);
+        } catch (err: any) {
+            showError(err.message || 'Failed to generate report');
+        } finally {
+            setIsGeneratingReport(false);
         }
     };
 
@@ -111,10 +134,20 @@ export default function ResultsPage() {
                     <ArrowLeft size={18} />
                     Back to Case Details
                 </button>
-                <div>
+                <div style={{ flex: 1 }}>
                     <h1 className="page-title">Segmentation Results</h1>
                     <p className="page-subtitle">{caseData?.patientId || 'Patient'} - Analysis Report</p>
                 </div>
+                <button
+                    className="btn btn-primary"
+                    onClick={handleGenerateReport}
+                    disabled={isGeneratingReport}
+                >
+                    {isGeneratingReport
+                        ? <><Loader2 size={16} className="spin" style={{ marginRight: '0.4rem', animation: 'spin 1s linear infinite' }} /> Generating&hellip;</>
+                        : <><FileText size={16} style={{ marginRight: '0.4rem' }} /> Generate Report</>
+                    }
+                </button>
             </div>
 
             <div className="results-grid">
@@ -158,6 +191,31 @@ export default function ResultsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Expert Gating Weights Card */}
+                {resultData.gating_weights && Object.keys(resultData.gating_weights).length > 0 && (
+                    <div className="card">
+                        <div className="card-header">
+                            <h3>Expert Contributions (Gating Weights)</h3>
+                        </div>
+                        <div className="card-body">
+                            <p style={{ fontSize: '0.8rem', color: '#9CA3AF', marginBottom: '1rem' }}>
+                                How much each modality expert contributed to the final segmentation.
+                            </p>
+                            {Object.entries(resultData.gating_weights as Record<string, number>).map(([mod, w]) => (
+                                <div key={mod} style={{ marginBottom: '0.75rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                                        <span style={{ fontWeight: 600 }}>{mod}</span>
+                                        <span>{(w * 100).toFixed(1)}%</span>
+                                    </div>
+                                    <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', borderRadius: 999, background: 'var(--color-primary)', width: `${(w * 100).toFixed(1)}%`, transition: 'width 0.6s ease' }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Visualization Card */}
                 <div className="card">
@@ -208,13 +266,29 @@ export default function ResultsPage() {
                                 <div className="success-message">
                                     ✓ Ground truth mask uploaded
                                 </div>
-                                <p className="info-text">
-                                    Ground truth mask is available for comparison. You can view it in 3D by opening the viewer.
-                                </p>
-                                <div className="upload-actions">
-                                    <label className="btn btn-outline">
+                                <div className="upload-actions" style={{ gap: '0.75rem', marginTop: '1rem' }}>
+                                    {groundTruthUrl && (
+                                        <>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() => setViewerImage({ url: groundTruthUrl, modality: 'Ground Truth' })}
+                                            >
+                                                <Eye size={16} />
+                                                View 3D
+                                            </button>
+                                            <a
+                                                href={groundTruthUrl}
+                                                download
+                                                className="btn btn-outline btn-sm"
+                                            >
+                                                <Download size={16} />
+                                                Download
+                                            </a>
+                                        </>
+                                    )}
+                                    <label className="btn btn-outline btn-sm">
                                         <Upload size={16} />
-                                        Replace Ground Truth
+                                        Replace
                                         <input
                                             type="file"
                                             accept=".nii,.nii.gz"

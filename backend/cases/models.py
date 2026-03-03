@@ -44,6 +44,15 @@ class Case(models.Model):
         on_delete=models.CASCADE,
         related_name='cases'
     )
+    # Patient user account linked to this case (set by doctor at case creation)
+    patient_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='patient_cases',
+        help_text='Patient user account this case belongs to'
+    )
     
     # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='created')

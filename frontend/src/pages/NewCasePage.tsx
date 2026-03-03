@@ -14,6 +14,7 @@ export default function NewCasePage() {
     const [patientId, setPatientId] = useState('');
     const [patientAge, setPatientAge] = useState('');
     const [patientSex, setPatientSex] = useState<'M' | 'F' | ''>('');
+    const [patientEmail, setPatientEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<Record<Modality, File | null>>({
         t1: null,
@@ -33,8 +34,8 @@ export default function NewCasePage() {
     const detectModality = (filename: string): Modality | null => {
         const lower = filename.toLowerCase();
         if (lower.includes('t1ce') || lower.includes('t1c')) return 't1ce';
-        if (lower.includes('t1')) return 't1';
-        if (lower.includes('t2')) return 't2';
+        if (lower.includes('t1n') || lower.includes('t1')) return 't1';
+        if (lower.includes('t2w')) return 't2';
         if (lower.includes('t2f') || lower.includes('flair')) return 'flair';
         return null;
     };
@@ -68,12 +69,13 @@ export default function NewCasePage() {
 
         try {
             // Create the case
-            const caseData = {
+            const caseData: Record<string, any> = {
                 patientId: patientId,
                 age: parseInt(patientAge),
                 sex: patientSex,
                 status: 'uploading',
             };
+            if (patientEmail.trim()) caseData.patientEmail = patientEmail.trim();
 
             const createdCase = await apiService.createCase(caseData);
             success('Case created successfully!');
@@ -86,7 +88,10 @@ export default function NewCasePage() {
                 );
 
             await Promise.all(uploadPromises);
-            success(`Successfully uploaded ${uploadPromises.length} MRI scans!`);
+
+            // Mark case as uploaded now that files are ready
+            await apiService.updateCase(createdCase.caseId, { status: 'uploaded' });
+            success(`Successfully uploaded ${uploadPromises.length} MRI scan(s). Ready for analysis!`);
 
             // Navigate to case details
             navigate(`/cases/${createdCase.caseId}`);
@@ -152,6 +157,22 @@ export default function NewCasePage() {
                                     <option value="M">Male</option>
                                     <option value="F">Female</option>
                                 </select>
+                            </div>
+
+                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                <label className="form-label">
+                                    Patient Account Email
+                                    <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>(optional)</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={patientEmail}
+                                    onChange={(e) => setPatientEmail(e.target.value)}
+                                    placeholder="patient@email.com — links to their account"
+                                />
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                    If the patient has an account, enter their email so they can view their reports.
+                                </p>
                             </div>
                         </div>
                     </div>

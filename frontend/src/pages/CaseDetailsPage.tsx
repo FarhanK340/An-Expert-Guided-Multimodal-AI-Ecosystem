@@ -128,7 +128,18 @@ export default function CaseDetailsPage() {
                     <span className={getStatusBadge(caseData.status)}>
                         {caseData.status}
                     </span>
-                    {mriImages.length === 4 && (
+                    {/* View Results — shown whenever segmentation results exist */}
+                    {(caseData.status === 'completed' || caseData.status === 'failed') && (
+                        <button
+                            className="btn btn-outline"
+                            onClick={() => navigate(`/cases/${id}/results`)}
+                        >
+                            <Eye size={18} />
+                            View Results
+                        </button>
+                    )}
+                    {/* Run Prediction — shown when files are ready; also allows re-running */}
+                    {mriImages.length >= 1 && caseData.status !== 'processing' && (
                         <button
                             className="btn btn-primary"
                             onClick={handleRunPrediction}
@@ -136,7 +147,10 @@ export default function CaseDetailsPage() {
                             style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
                         >
                             <Zap size={18} />
-                            {isPredicting ? 'Running...' : 'Run Prediction'}
+                            {isPredicting
+                                ? 'Running...'
+                                : caseData.status === 'completed' ? 'Re-run Prediction' : 'Run Prediction'
+                            }
                         </button>
                     )}
                     <button

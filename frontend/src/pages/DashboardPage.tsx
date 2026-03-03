@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Activity, FolderOpen, CheckCircle, Clock } from 'lucide-react';
 import { apiService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import PatientDashboardPage from './PatientDashboardPage';
 import './DashboardPage.css';
 
 export default function DashboardPage() {
+    const { isPatient } = useAuth();
     const [cases, setCases] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Patients get their own specialised dashboard
+    if (isPatient) return <PatientDashboardPage />;
+
 
     useEffect(() => {
         const fetchCases = async () => {

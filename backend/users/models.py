@@ -47,6 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('doctor', 'Doctor'),
         ('radiologist', 'Radiologist'),
         ('researcher', 'Researcher'),
+        ('patient', 'Patient'),
         ('admin', 'Administrator'),
     ]
     
@@ -119,14 +120,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     @property
     def is_clinician(self):
-        """Check if user is a clinician."""
-        return self.role == 'clinician'
-    
+        """Check if user is any clinical professional."""
+        return self.role in ('doctor', 'radiologist', 'researcher')
+
+    @property
+    def is_doctor(self):
+        """Check if user is a doctor."""
+        return self.role == 'doctor'
+
+    @property
+    def is_patient(self):
+        """Check if user is a patient."""
+        return self.role == 'patient'
+
     @property
     def is_admin(self):
         """Check if user is an administrator."""
         return self.role == 'admin'
-    
+
     @property
     def is_researcher(self):
         """Check if user is a researcher."""

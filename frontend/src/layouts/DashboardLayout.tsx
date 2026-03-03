@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderOpen, FileText, Settings, LogOut, Brain } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, FolderOpen, FileText, Settings, LogOut, Brain, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './DashboardLayout.css';
 
@@ -10,34 +10,57 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const { user, logout, isAdmin, isPatient, isAuthenticated, isLoading } = useAuth();
 
-    const navigation = [
-        { name: 'Dashboard', href: '/dashboard', icon: Home },
-        { name: 'Cases', href: '/cases', icon: FolderOpen },
-        { name: 'Reports', href: '/reports', icon: FileText },
-        { name: 'Settings', href: '/settings', icon: Settings },
-    ];
+    // Redirect to login if not authenticated (after loading)
+    if (!isLoading && !isAuthenticated) {
+        navigate('/login', { replace: true });
+        return null;
+    }
 
-    const isActive = (path: string) => location.pathname === path;
+    // Navigation items filtered by role
+    const getNavItems = () => {
+        const base = [
+            { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
+            { name: 'Cases', href: '/cases', icon: FolderOpen, roles: ['doctor', 'radiologist', 'researcher', 'admin'] },
+            { name: 'My Cases', href: '/cases', icon: FolderOpen, roles: ['patient'] },
+            { name: 'Reports', href: '/reports', icon: FileText, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
+            { name: 'Settings', href: '/settings', icon: Settings, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
+            { name: 'Admin Panel', href: '/admin', icon: ShieldCheck, roles: ['admin'] },
+        ];
 
-    // Get user initials
-    const getUserInitials = () => {
-        if (!user) return 'U';
-        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+        const role = user?.role || 'doctor';
+        return base.filter(item => item.roles.includes(role));
     };
 
-    // Get role display name
+    const navigation = getNavItems();
+    const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+
+    const getUserInitials = () => {
+        if (!user) return 'U';
+        return `${(user.firstName || 'U')[0]}${(user.lastName || 'U')[0]}`.toUpperCase();
+    };
+
     const getRoleDisplay = () => {
         if (!user) return 'User';
         const roleMap: Record<string, string> = {
             doctor: 'Doctor',
             radiologist: 'Radiologist',
             researcher: 'Researcher',
+            patient: 'Patient',
             admin: 'Administrator',
         };
         return roleMap[user.role] || user.role;
     };
+
+    if (isLoading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#6B7280' }}>
+                Loading...
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-layout">
@@ -82,7 +105,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <header className="top-bar">
                     <div className="top-bar-content">
                         <div className="user-info">
-                            <div className="user-avatar">{getUserInitials()}</div>
+                            <div className={`user-avatar ${isAdmin ? 'avatar-admin' : isPatient ? 'avatar-patient' : ''}`}>
+                                {getUserInitials()}
+                            </div>
                             <div>
                                 <p className="user-name">
                                     {user ? `${user.firstName} ${user.lastName}` : 'User'}

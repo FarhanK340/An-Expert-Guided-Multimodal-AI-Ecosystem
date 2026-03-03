@@ -222,6 +222,13 @@ class ApiService {
         });
     }
 
+    async updateCase(caseId: string, updates: Record<string, any>): Promise<any> {
+        return await this.request(`/cases/${caseId}/update/`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        });
+    }
+
     async uploadMRIImage(caseId: string, file: File, modality: string): Promise<any> {
         const formData = new FormData();
         formData.append('file', file);
@@ -281,6 +288,52 @@ class ApiService {
     // Check if user is authenticated
     isAuthenticated(): boolean {
         return !!this.accessToken;
+    }
+
+    // ── Reports APIs ────────────────────────────────────────────────
+
+    async getReports(): Promise<any[]> {
+        return await this.request('/reports/');
+    }
+
+    async getReport(reportId: string): Promise<any> {
+        return await this.request(`/reports/${reportId}/`);
+    }
+
+    async generateReport(caseId: string): Promise<any> {
+        return await this.request(`/reports/generate/${caseId}/`, { method: 'POST' });
+    }
+
+    async updateReport(reportId: string, data: { finalizedText: string; editReason?: string }): Promise<any> {
+        return await this.request(`/reports/${reportId}/update/`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async exportReportPDF(reportId: string): Promise<void> {
+        const url = `${API_BASE_URL}/reports/${reportId}/export/`;
+        const headers: Record<string, string> = {};
+        if (this.accessToken) headers['Authorization'] = `Bearer ${this.accessToken}`;
+
+        const response = await fetch(url, { method: 'POST', headers });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: 'Export failed' }));
+            throw new Error(err.error || 'Export failed');
+        }
+
+        // Trigger browser download
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        a.download = match ? match[1] : `report_${reportId}.pdf`;
+        a.href = blobUrl;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
     }
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Brain, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -9,7 +9,6 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
     const { login } = useAuth();
     const { error: showError } = useNotification();
 
@@ -86,8 +85,8 @@ export default function LoginPage() {
                     </form>
 
                     <div className="login-footer">
-                        <p className="footer-text">Research Prototype for Investigational Use Only</p>
-                        <p className="footer-text">Not for Clinical Diagnosis</p>
+                        <p className="footer-text">Don't have an account? <Link to="/signup" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Sign up</Link></p>
+                        <p className="footer-text" style={{ marginTop: '0.5rem' }}>Research Prototype — Not for Clinical Diagnosis</p>
                     </div>
                 </div>
             </div>

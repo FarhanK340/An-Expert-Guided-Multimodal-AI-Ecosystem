@@ -46,13 +46,41 @@ class PredictSegmentationView(APIView):
             case.status = 'processing'
             case.save()
             
-            # Run inference
+            # Resolve case_dir from the uploaded MRI images
+            from cases.models import MRIImage
+            mri_images = MRIImage.objects.filter(case=case)
+            if not mri_images.exists():
+                return Response(
+                    {'error': 'No MRI images uploaded for this case. Please upload scans first.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # case_dir is the parent of the first uploaded file
+            media_root = Path(settings.MEDIA_ROOT)
+            first_image = mri_images.first()
+            # file_path is a Django FileField — use .name to get the string path
+            first_path_str = first_image.file_path.name  # relative to MEDIA_ROOT
+            first_abs = media_root / first_path_str
+            case_dir = first_abs.parent
+
+            if not case_dir.exists():
+                return Response(
+                    {'error': f'MRI files not found on disk at {case_dir}. Please re-upload.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Run the MoME+ inference engine
             engine = InferenceEngine()
-            result = engine.run_inference(str(case_id))
-            
+            result = engine.run_inference(str(case_id), case_dir)
+
             return Response({
                 'message': 'Segmentation completed successfully',
-                'result': result
+                'result': {
+                    'volumes': result['volumes'],
+                    'confidence_scores': result['confidence_scores'],
+                    'gating_weights': result.get('gating_weights', {}),
+                    'available_modalities': list(result.get('mask_files', {}).keys()),
+                }
             }, status=status.HTTP_200_OK)
             
         except FileNotFoundError as e:
@@ -213,12 +241,16 @@ class UploadGroundTruthView(APIView):
             if not result.structured_findings:
                 result.structured_findings = {}
             
-            result.structured_findings['ground_truth_mask'] = str(gt_file_path.relative_to(settings.MEDIA_ROOT))
+            rel_path = str(gt_file_path.relative_to(settings.MEDIA_ROOT))
+            result.structured_findings['ground_truth_mask'] = rel_path
             result.save()
-            
+
+            media_url = f"{settings.MEDIA_URL}{rel_path}"
+
             return Response({
                 'message': 'Ground truth uploaded successfully',
-                'file_path': str(gt_file_path.relative_to(settings.MEDIA_ROOT))
+                'file_path': rel_path,
+                'url': media_url,
             }, status=status.HTTP_200_OK)
             
         except SegmentationResult.DoesNotExist:

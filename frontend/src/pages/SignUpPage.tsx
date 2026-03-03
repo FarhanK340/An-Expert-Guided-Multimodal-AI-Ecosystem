@@ -112,9 +112,11 @@ export default function SignUpPage() {
                             </div>
                         </div>
 
-                        {/* Professional Information */}
+                        {/* Professional Information — not shown for patients */}
                         <div className="form-section">
-                            <h3 className="form-section-title">Professional Information</h3>
+                            <h3 className="form-section-title">
+                                {formData.role === 'patient' ? 'Account Type' : 'Professional Information'}
+                            </h3>
 
                             <div className="form-group">
                                 <label htmlFor="role" className="form-label">Role</label>
@@ -130,37 +132,40 @@ export default function SignUpPage() {
                                         <option value="doctor">Doctor</option>
                                         <option value="radiologist">Radiologist</option>
                                         <option value="researcher">Researcher</option>
+                                        <option value="patient">Patient</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="specialty" className="form-label">Specialty (Optional)</label>
-                                    <input
-                                        id="specialty"
-                                        type="text"
-                                        value={formData.specialty}
-                                        onChange={(e) => updateField('specialty', e.target.value)}
-                                        placeholder="Neurology, Oncology, etc."
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="institution" className="form-label">Institution (Optional)</label>
-                                    <div className="input-wrapper">
-                                        <Building2 size={18} className="input-icon" />
+                            {formData.role !== 'patient' && (
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label htmlFor="specialty" className="form-label">Specialty (Optional)</label>
                                         <input
-                                            id="institution"
+                                            id="specialty"
                                             type="text"
-                                            value={formData.institution}
-                                            onChange={(e) => updateField('institution', e.target.value)}
-                                            placeholder="Hospital or University"
-                                            className="input-with-icon"
+                                            value={formData.specialty}
+                                            onChange={(e) => updateField('specialty', e.target.value)}
+                                            placeholder="Neurology, Oncology, etc."
                                         />
                                     </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor="institution" className="form-label">Institution (Optional)</label>
+                                        <div className="input-wrapper">
+                                            <Building2 size={18} className="input-icon" />
+                                            <input
+                                                id="institution"
+                                                type="text"
+                                                value={formData.institution}
+                                                onChange={(e) => updateField('institution', e.target.value)}
+                                                placeholder="Hospital or University"
+                                                className="input-with-icon"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Security */}

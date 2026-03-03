@@ -43,19 +43,50 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    """User login endpoint (JWT)."""
+    """User login endpoint (JWT) — email + password."""
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
-        serializer = CustomTokenObtainPairSerializer(data=request.data)
-        
+        email    = request.data.get('email', '').strip().lower()
+        password = request.data.get('password', '')
+
+        if not email or not password:
+            return Response(
+                {'error': 'Email and password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Look up user directly by email
         try:
-            serializer.is_valid(raise_exception=True)
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                'error': 'Invalid credentials'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Verify password
+        if not user.check_password(password):
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Check account is active
+        if not user.is_active:
+            return Response(
+                {'error': 'Your account has been deactivated. Contact support.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Issue JWT tokens
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'user': UserSerializer(user).data,
+            'access':  str(refresh.access_token),
+            'refresh': str(refresh),
+        }, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

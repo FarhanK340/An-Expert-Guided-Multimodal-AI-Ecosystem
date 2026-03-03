@@ -5,7 +5,7 @@ export interface User {
     email: string;
     firstName: string;
     lastName: string;
-    role: 'doctor' | 'radiologist' | 'researcher' | 'admin';
+    role: 'doctor' | 'radiologist' | 'researcher' | 'patient' | 'admin';
     specialty?: string;
     institution?: string;
     phoneNumber?: string;
@@ -20,7 +20,7 @@ export interface SignUpData {
     confirmPassword: string;
     firstName: string;
     lastName: string;
-    role: 'doctor' | 'radiologist' | 'researcher';
+    role: 'doctor' | 'radiologist' | 'researcher' | 'patient';
     specialty?: string;
     institution?: string;
 }

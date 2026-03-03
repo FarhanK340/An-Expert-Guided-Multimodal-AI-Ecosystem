@@ -7,6 +7,9 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isDoctor: boolean;
+    isPatient: boolean;
+    isAdmin: boolean;
     login: (email: string, password: string) => Promise<void>;
     signup: (data: any) => Promise<void>;
     logout: () => void;
@@ -91,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 isAuthenticated: !!user,
                 isLoading,
+                isDoctor: user?.role === 'doctor' || user?.role === 'radiologist' || user?.role === 'researcher',
+                isPatient: user?.role === 'patient',
+                isAdmin: user?.role === 'admin',
                 login,
                 signup,
                 logout,
