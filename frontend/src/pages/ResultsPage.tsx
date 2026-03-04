@@ -226,14 +226,17 @@ export default function ResultsPage() {
                         <div className="visualization-grid">
                             {resultData.mask_files && Object.entries(resultData.mask_files).map(([key, path]: [string, any]) => {
                                 if (!path) return null;
-                                const label = key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+                                let label = key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+                                if (key === 'full_segmentation') {
+                                    label = 'Full Segmentation (Combined)';
+                                }
                                 return (
                                     <div key={key} className="visualization-item">
                                         <div className="visualization-label">{label}</div>
                                         <button
                                             className="btn btn-primary btn-sm"
                                             onClick={() => setViewerImage({
-                                                url: `http://localhost:8000${path}`,
+                                                url: path.startsWith('http') ? path : `http://localhost:8000${path}`,
                                                 modality: label
                                             })}
                                         >
@@ -241,7 +244,7 @@ export default function ResultsPage() {
                                             View 3D
                                         </button>
                                         <a
-                                            href={`http://localhost:8000${path}`}
+                                            href={path.startsWith('http') ? path : `http://localhost:8000${path}`}
                                             download
                                             className="btn btn-outline btn-sm"
                                         >
@@ -254,7 +257,6 @@ export default function ResultsPage() {
                         </div>
                     </div>
                 </div>
-
                 {/* Ground Truth Upload Card */}
                 <div className="card">
                     <div className="card-header">
@@ -320,46 +322,118 @@ export default function ResultsPage() {
                     </div>
                 </div>
 
-                {/* Model Info Card */}
-                {resultData.structured_findings && (
-                    <div className="card">
-                        <div className="card-header">
-                            <h3>Model Information</h3>
-                        </div>
-                        <div className="card-body">
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="info-label">Model Version</span>
-                                    <span className="info-value">
-                                        {resultData.structured_findings.model_version || 'MoME+ v1.0'}
-                                    </span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="info-label">Device</span>
-                                    <span className="info-value">
-                                        {resultData.structured_findings.device || 'N/A'}
-                                    </span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="info-label">Processed</span>
-                                    <span className="info-value">
-                                        {new Date(resultData.created_at).toLocaleString()}
-                                    </span>
+                {/* Voxel Difference Comparison Card */}
+                {
+                    resultData.structured_findings?.ground_truth_comparison && (
+                        <div className="card">
+                            <div className="card-header">
+                                <h3>Voxel Difference Comparison</h3>
+                            </div>
+                            <div className="card-body">
+                                <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1rem' }}>
+                                    Direct comparison between the model's prediction and the uploaded ground truth mask.
+                                </p>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
+                                                <th style={{ padding: '0.75rem' }}>Region</th>
+                                                <th style={{ padding: '0.75rem' }}>Dice Score (DSC)</th>
+                                                <th style={{ padding: '0.75rem' }}>IoU</th>
+                                                <th style={{ padding: '0.75rem' }}>GT Volume</th>
+                                                <th style={{ padding: '0.75rem' }}>Pred Volume</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {['whole_tumor', 'tumor_core', 'enhancing_tumor'].map((region) => {
+                                                const comp = resultData.structured_findings.ground_truth_comparison[region];
+                                                if (!comp) return null;
+                                                const label = region.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                                return (
+                                                    <tr key={region} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                        <td style={{ padding: '0.75rem', fontWeight: 600 }}>{label}</td>
+                                                        <td style={{ padding: '0.75rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                                                            {(comp.dice * 100).toFixed(2)}%
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem' }}>{(comp.iou * 100).toFixed(2)}%</td>
+                                                        <td style={{ padding: '0.75rem' }}>{formatVolume(comp.gt_volume)}</td>
+                                                        <td style={{ padding: '0.75rem' }}>{formatVolume(comp.pred_volume)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+
+                {/* Detailed JSON Descriptor Card */}
+                {
+                    resultData.structured_findings && (
+                        <div className="card" style={{ gridColumn: '1 / -1' }}>
+                            <div className="card-header">
+                                <h3><FileText size={20} style={{ marginRight: '0.5rem' }} /> Detailed JSON Descriptor</h3>
+                            </div>
+                            <div className="card-body">
+                                <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1rem' }}>
+                                    Underlying JSON schema containing the atlas-mapped clinical features used for report generation.
+                                </p>
+                                <div style={{ maxHeight: '400px', overflowY: 'auto', background: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                                    <pre style={{ margin: 0, fontSize: '0.8rem', color: '#334155', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                        {JSON.stringify(resultData.structured_findings, null, 2)}
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+
+                {/* Model Info Card */}
+                {
+                    resultData.structured_findings && (
+                        <div className="card">
+                            <div className="card-header">
+                                <h3>Model Information</h3>
+                            </div>
+                            <div className="card-body">
+                                <div className="info-grid">
+                                    <div className="info-item">
+                                        <span className="info-label">Model Version</span>
+                                        <span className="info-value">
+                                            {resultData.structured_findings.model_version || 'MoME+ v1.0'}
+                                        </span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Device</span>
+                                        <span className="info-value">
+                                            {resultData.structured_findings.device || 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Processed</span>
+                                        <span className="info-value">
+                                            {new Date(resultData.created_at).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </div >
 
             {/* MRI Viewer Modal */}
-            {viewerImage && (
-                <MRIViewer
-                    imageUrl={viewerImage.url}
-                    modality={viewerImage.modality}
-                    onClose={() => setViewerImage(null)}
-                />
-            )}
+            {
+                viewerImage && (
+                    <MRIViewer
+                        imageUrl={viewerImage.url}
+                        modality={viewerImage.modality}
+                        onClose={() => setViewerImage(null)}
+                    />
+                )
+            }
         </div>
     );
 }

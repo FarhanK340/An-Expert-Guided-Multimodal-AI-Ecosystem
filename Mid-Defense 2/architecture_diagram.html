@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Diagram - Research Style</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#ffffff',
+                primaryTextColor: '#000000',
+                primaryBorderColor: '#000000',
+                lineColor: '#000000',
+                secondaryColor: '#f4f4f4',
+                tertiaryColor: '#ffffff',
+                fontFamily: '"Times New Roman", Times, serif',
+                fontSize: '16px'
+            },
+            flowchart: {
+                curve: 'basis', // Smooth curves
+                nodeSpacing: 50,
+                rankSpacing: 50
+            }
+        });
+    </script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            padding: 40px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background: white;
+        }
+
+        h4 {
+            text-align: center;
+            font-family: "Times New Roman", Times, serif;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h4>System Architecture</h4>
+        <div class="mermaid">
+            flowchart TD
+            subgraph Presentation["Presentation Layer"]
+            WD["Web Dashboard"]
+            end
+
+            subgraph Application["Application Layer"]
+            API["Django REST API"]
+            end
+
+            subgraph Business["Business Logic Layer"]
+            direction LR
+            Pre["Preprocessing<br />Service"]
+            Inf["Inference<br />Service"]
+            Rep["Report<br />Generator"]
+            end
+
+            subgraph Models["ML Models Layer"]
+            direction LR
+            MoME["MoME+ Model<br />(Segmentation)"]
+            LLM["MedGemma4b<br />(LLM)"]
+            end
+
+            subgraph Data["Data Layer"]
+            direction LR
+            FS[("File Storage")]
+            DB[("PostgreSQL DB")]
+            end
+
+            WD -- HTTP Requests --> API
+            API --> Pre
+            API --> Inf
+            API --> Rep
+
+            Pre --> MoME
+            Inf --> MoME
+            Rep --> LLM
+
+            MoME -- "Save Segmentation Masks" --> FS
+            MoME -- "Save Segmentation Masks" --> DB
+            LLM -- "Store Structured Reports" --> DB
+
+            API -- "CRUD Operations" --> DB
+            FS -. "Fetch Scans" .-> Pre
+
+            style Presentation fill:#fff,stroke:#000,stroke-width:1.5px,color:#000,stroke-dasharray: 4 4
+            style Application fill:#fff,stroke:#000,stroke-width:1.5px,color:#000,stroke-dasharray: 4 4
+            style Business fill:#fff,stroke:#000,stroke-width:1.5px,color:#000,stroke-dasharray: 4 4
+            style Models fill:#fff,stroke:#000,stroke-width:1.5px,color:#000,stroke-dasharray: 4 4
+            style Data fill:#fff,stroke:#000,stroke-width:1.5px,color:#000,stroke-dasharray: 4 4
+
+            style WD fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style API fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style Pre fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style Inf fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style Rep fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style MoME fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style LLM fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style FS fill:#f9f9f9,stroke:#000,stroke-width:1px
+            style DB fill:#f9f9f9,stroke:#000,stroke-width:1px
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -234,21 +234,105 @@ class SegmentationResultView(APIView):
             )
 
         def mask_url(field_value):
-            """Convert a file path to a media URL."""
+            """Convert a file path to a media URL"""
             if not field_value:
                 return None
-            path_str = str(field_value)
-            if path_str.startswith('/') or path_str[1:3] == ':\\':
-                # Absolute path — make relative to MEDIA_ROOT
-                try:
-                    from pathlib import Path
-                    rel = Path(path_str).relative_to(settings.MEDIA_ROOT)
-                    return request.build_absolute_uri(f'{settings.MEDIA_URL}{rel}')
-                except ValueError:
-                    return None
-            return request.build_absolute_uri(f'{settings.MEDIA_URL}{path_str}')
+            p = str(field_value).replace('\\', '/')
+            mr = str(settings.MEDIA_ROOT).replace('\\', '/')
+            
+            if p.lower().startswith(mr.lower()):
+                rel = p[len(mr):].lstrip('/')
+                return request.build_absolute_uri(f'{settings.MEDIA_URL}{rel}')
+                
+            if not (p.startswith('/') or p[1:3] == ':/'):
+                return request.build_absolute_uri(f'{settings.MEDIA_URL}{p}')
+                
+            # Ultimate fallback
+            return request.build_absolute_uri(f'{settings.MEDIA_URL}{p.split("/")[-1]}')
 
         structured = seg.structured_findings or {}
+
+        # Retroactive fix for full_segmentation_mask
+        if 'full_segmentation_mask' not in structured and seg.whole_tumor_mask:
+            try:
+                wt_path = str(seg.whole_tumor_mask)
+                if 'whole_tumor' in wt_path:
+                    full_path = wt_path.replace('whole_tumor', 'full_segmentation')
+                    from pathlib import Path
+                    
+                    if (Path(settings.MEDIA_ROOT) / full_path).exists():
+                        struct_copy = dict(structured)
+                        struct_copy['full_segmentation_mask'] = full_path
+                        seg.structured_findings = struct_copy
+                        structured = struct_copy
+                        seg.save(update_fields=['structured_findings'])
+            except Exception:
+                pass
+                
+        # Retroactive fix for Voxel Differences
+        if 'ground_truth_mask' in structured and 'ground_truth_comparison' not in structured:
+            try:
+                import nibabel as nib
+                import numpy as np
+                from pathlib import Path
+                
+                gt_file_path = Path(settings.MEDIA_ROOT) / structured['ground_truth_mask']
+                if gt_file_path.exists():
+                    gt_img = nib.load(str(gt_file_path))
+                    gt_data = gt_img.get_fdata()
+                    voxel_spacing = gt_img.header.get_zooms()[:3]
+                    voxel_vol_mm3 = float(np.prod(voxel_spacing))
+
+                    def calc_metrics(pred_path, gt_mask_bin):
+                        if not pred_path: return None
+                        try:
+                            abs_pred = Path(settings.MEDIA_ROOT) / str(pred_path)
+                            if not abs_pred.exists(): return None
+                            pred_data = nib.load(str(abs_pred)).get_fdata() > 0
+                            
+                            # Ensure boolean type for logical operations
+                            pred_data = pred_data.astype(bool)
+                            gt_mask_bin = gt_mask_bin.astype(bool)
+                            
+                            if pred_data.shape != gt_mask_bin.shape:
+                                if set(pred_data.shape) == set(gt_mask_bin.shape):
+                                    for ax_perm in [(0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]:
+                                        if np.transpose(gt_mask_bin, axes=ax_perm).shape == pred_data.shape:
+                                            gt_mask_bin = np.transpose(gt_mask_bin, axes=ax_perm)
+                                            break
+                            
+                            intersection = np.logical_and(pred_data, gt_mask_bin).sum()
+                            union = np.logical_or(pred_data, gt_mask_bin).sum()
+                            pred_sum = pred_data.sum()
+                            gt_sum = gt_mask_bin.sum()
+                            
+                            dice = (2.0 * intersection) / (pred_sum + gt_sum) if (pred_sum + gt_sum) > 0 else 0.0
+                            iou = intersection / union if union > 0 else 0.0
+                            return {
+                                'dice': float(dice),
+                                'iou': float(iou),
+                                'pred_volume': float(pred_sum * voxel_vol_mm3),
+                                'gt_volume': float(gt_sum * voxel_vol_mm3)
+                            }
+                        except Exception:
+                            return None
+
+                    gt_wt = gt_data > 0
+                    gt_tc = np.logical_or(gt_data == 1, gt_data == 4)
+                    gt_et = gt_data == 4
+
+                    comparison = {
+                        'whole_tumor': calc_metrics(seg.whole_tumor_mask.name, gt_wt),
+                        'tumor_core': calc_metrics(seg.tumor_core_mask.name, gt_tc),
+                        'enhancing_tumor': calc_metrics(seg.enhancing_tumor_mask.name, gt_et)
+                    }
+                    struct_copy2 = dict(structured)
+                    struct_copy2['ground_truth_comparison'] = comparison
+                    seg.structured_findings = struct_copy2
+                    structured = struct_copy2
+                    seg.save(update_fields=['structured_findings'])
+            except Exception as e:
+                print(f"Retroactive GT calculation failed: {e}")
 
         return Response({
             'volumes': {
@@ -265,6 +349,7 @@ class SegmentationResultView(APIView):
                 'whole_tumor':       mask_url(seg.whole_tumor_mask),
                 'tumor_core':        mask_url(seg.tumor_core_mask),
                 'enhancing_tumor':   mask_url(seg.enhancing_tumor_mask),
+                'full_segmentation': mask_url(structured.get('full_segmentation_mask')) if structured.get('full_segmentation_mask') else None,
             },
             'structured_findings': structured,
             'gating_weights': structured.get('gating_weights', {}),

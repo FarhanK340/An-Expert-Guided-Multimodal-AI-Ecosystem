@@ -57,7 +57,8 @@ class GenerateReportView(APIView):
 
         json_descriptor = generate_json_descriptor(
             structured_findings=seg_result.structured_findings,
-            patient_info=patient_info
+            patient_info=patient_info,
+            case_id=str(case.case_id)
         )
 
         # --- Generate report text via LLM ---

@@ -181,6 +181,9 @@ class GetSegmentationResultView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
+import nibabel as nib
+import numpy as np
+
 class UploadGroundTruthView(APIView):
     """Upload ground truth segmentation mask for comparison."""
     permission_classes = [IsAuthenticated]
@@ -243,6 +246,66 @@ class UploadGroundTruthView(APIView):
             
             rel_path = str(gt_file_path.relative_to(settings.MEDIA_ROOT))
             result.structured_findings['ground_truth_mask'] = rel_path
+
+            # Load GT and compute Dice/IoU if predicted masks exist
+            try:
+                gt_img = nib.load(str(gt_file_path))
+                gt_data = gt_img.get_fdata()
+                
+                # Voxel spacing to calculate mm3
+                voxel_spacing = gt_img.header.get_zooms()[:3]
+                voxel_vol_mm3 = float(np.prod(voxel_spacing))
+
+                def calc_metrics(pred_path, gt_mask_bin):
+                    if not pred_path:
+                        return None
+                    try:
+                        abs_pred = Path(settings.MEDIA_ROOT) / str(pred_path)
+                        pred_data = nib.load(str(abs_pred)).get_fdata() > 0
+                        
+                        pred_data = pred_data.astype(bool)
+                        gt_mask_bin = gt_mask_bin.astype(bool)
+                        
+                        if pred_data.shape != gt_mask_bin.shape:
+                            if set(pred_data.shape) == set(gt_mask_bin.shape):
+                                for ax_perm in [(0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]:
+                                    if np.transpose(gt_mask_bin, axes=ax_perm).shape == pred_data.shape:
+                                        gt_mask_bin = np.transpose(gt_mask_bin, axes=ax_perm)
+                                        break
+                        
+                        intersection = np.logical_and(pred_data, gt_mask_bin).sum()
+                        union = np.logical_or(pred_data, gt_mask_bin).sum()
+                        pred_sum = pred_data.sum()
+                        gt_sum = gt_mask_bin.sum()
+                        
+                        dice = (2.0 * intersection) / (pred_sum + gt_sum) if (pred_sum + gt_sum) > 0 else 0.0
+                        iou = intersection / union if union > 0 else 0.0
+                        
+                        return {
+                            'dice': float(dice),
+                            'iou': float(iou),
+                            'pred_volume': float(pred_sum * voxel_vol_mm3),
+                            'gt_volume': float(gt_sum * voxel_vol_mm3)
+                        }
+                    except Exception as e:
+                        print(f"Error calculating metrics: {e}")
+                        return None
+
+                # BraTS Convention: WT = >0, TC = 1 | 4, ET = 4
+                gt_wt = gt_data > 0
+                gt_tc = np.logical_or(gt_data == 1, gt_data == 4)
+                gt_et = gt_data == 4
+
+                comparison = {
+                    'whole_tumor': calc_metrics(result.whole_tumor_mask.name, gt_wt),
+                    'tumor_core': calc_metrics(result.tumor_core_mask.name, gt_tc),
+                    'enhancing_tumor': calc_metrics(result.enhancing_tumor_mask.name, gt_et)
+                }
+                
+                result.structured_findings['ground_truth_comparison'] = comparison
+            except Exception as e:
+                print(f"Failed to calculate ground truth metrics: {e}")
+
             result.save()
 
             media_url = f"{settings.MEDIA_URL}{rel_path}"

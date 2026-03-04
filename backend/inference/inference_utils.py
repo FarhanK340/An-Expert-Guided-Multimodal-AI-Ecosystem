@@ -285,6 +285,7 @@ class InferenceEngine:
                     'timestamp':             datetime.now().isoformat(),
                     'model_version':         'MoME+ v1.0',
                     'device':                str(self.device),
+                    'full_segmentation_mask': mask_files.get('full_segmentation', ''),
                 },
             }
         )
