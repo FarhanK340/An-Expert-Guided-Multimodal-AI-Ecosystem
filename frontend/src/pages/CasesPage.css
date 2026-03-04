@@ -1,0 +1,67 @@
+.cases-page {
+    height: 100%;
+}
+
+.search-card {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.search-wrapper {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--spacing-md);
+    color: var(--neutral-400);
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding-left: calc(var(--spacing-md) + 26px);
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--radius-md);
+}
+
+.search-input:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.patient-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+    color: var(--neutral-700);
+}
+
+.patient-divider {
+    color: var(--neutral-300);
+}
+
+.modalities-count {
+    font-size: 0.875rem;
+    color: var(--neutral-600);
+}
+
+.actions-cell {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+.cases-table {
+    padding-bottom: var(--spacing-2xl);
+}

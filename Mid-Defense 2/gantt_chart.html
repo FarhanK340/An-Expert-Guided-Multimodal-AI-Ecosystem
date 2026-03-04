@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Gantt Chart - 75% Progress</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            gantt: {
+                titleTopMargin: 25,
+                barHeight: 25,
+                barGap: 8,
+                padding: 15,
+                fontSize: 14,
+                sectionFontSize: 16,
+                numberSectionStyles: 4
+            }
+        });
+    </script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .mermaid-wrapper {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+            max-width: 1100px;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        h2 {
+            text-align: center;
+            color: #1e293b;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .progress-legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 0px;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        /* Mermaid Default Theme Legend Approximation */
+        .box.done {
+            background: rgba(160, 160, 160, 0.7);
+            border: 1px solid rgba(130, 130, 130, 1);
+        }
+
+        .box.active {
+            background: rgba(144, 202, 249, 0.7);
+            border: 1px solid rgba(100, 181, 246, 1);
+        }
+
+        .box.future {
+            background: rgba(220, 220, 220, 0.4);
+            border: 1px solid rgba(190, 190, 190, 1);
+        }
+
+        /* Overall Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 75%;
+            background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+            border-radius: 6px;
+        }
+
+        .progress-text {
+            text-align: right;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0ea5e9;
+            margin-bottom: 15px;
+        }
+
+        /* Lighten Mermaid vertical grid lines */
+        .mermaid-wrapper svg .grid line {
+            stroke: #000000 !important;
+            opacity: 0.8;
+        }
+
+        .mermaid-wrapper svg .tick line {
+            stroke: #979898 !important;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mermaid-wrapper">
+        <h2>Project Timeline & Milestones</h2>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill"></div>
+        </div>
+        <div class="progress-text">Overall Project Completion: ~75%</div>
+
+        <div class="progress-legend">
+            <div class="legend-item">
+                <div class="box done"></div> Completed
+            </div>
+            <div class="legend-item">
+                <div class="box active"></div> In Progress
+            </div>
+            <div class="legend-item">
+                <div class="box future"></div> Planned
+            </div>
+        </div>
+
+        <div class="mermaid">
+            gantt
+            dateFormat YYYY-MM-DD
+            axisFormat %b %y
+
+            section M1: Data & Preprocessing
+            Collect datasets :done, m1_1, 2023-08-01, 2023-08-25
+            Preprocessing :done, m1_2, 2023-08-25, 2023-09-10
+            Convert slices/patches :done, m1_3, 2023-09-10, 2023-09-20
+            Data augmentation setup :done, m1_4, 2023-09-20, 2023-10-05
+
+            section M2: Seg Baseline (MoME+)
+            Implement baseline model :done, m2_1, 2023-10-05, 2023-10-25
+            Train baseline model :done, m2_2, 2023-10-25, 2023-11-20
+            Validate with Dice/IoU :done, m2_3, 2023-11-20, 2023-11-30
+
+            section M3: Continual Learning
+            Implement EWC :done, m3_1, 2023-12-01, 2023-12-20
+            Implement Replay Buffer :done, m3_2, 2023-12-20, 2024-01-10
+            Evaluate retention curves :done, m3_3, 2024-01-10, 2024-01-25
+
+            section M6: Integration (API/UI)
+            Backend APIs (Django REST) :done, m6_1, 2023-11-15, 2024-01-30
+            Celery + Redis async tasks :done, m6_2, 2024-01-20, 2024-02-15
+            Frontend Dashboard (React) :active, m6_3, 2024-02-10, 2024-03-05
+            3D visualization integration : m6_4, 2024-03-05, 2024-03-20
+            End-to-end integration testing : m6_5, 2024-03-20, 2024-04-01
+
+            section M4: Report Gen (LLM)
+            Define JSON schema :done, m4_1, 2024-01-25, 2024-02-05
+            Build JSON mapping pipeline :active, m4_2, 2024-02-05, 2024-02-25
+            Fine-tune MedAlpaca / LLM :active, m4_3, 2024-02-20, 2024-03-15
+            Narrative generation pipeline : m4_4, 2024-03-15, 2024-03-28
+
+            section M5: Explainability
+            Sentence-to-JSON traceability : m5_1, 2024-03-20, 2024-03-30
+            Clinician feedback UI : m5_2, 2024-03-30, 2024-04-08
+
+            section M7: Deployment
+            Containerization (Docker) :done, m7_1, 2024-02-01, 2024-02-15
+            CI/CD setup & Cloud Deploy : m7_2, 2024-03-25, 2024-04-05
+            Final Demo & Delivery : m7_3, 2024-04-05, 2024-04-15
+        </div>
+    </div>
+</body>
+
+</html>

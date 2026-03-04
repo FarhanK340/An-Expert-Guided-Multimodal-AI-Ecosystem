@@ -1,0 +1,15 @@
+{
+  "template_baseline": {
+    "bleu_4": 44.73441601808232,
+    "rouge_l": 0.6529374272114521,
+    "meteor": 0.3966497219812496,
+    "num_samples": 30
+  },
+  "llm_model": {
+    "bleu_4": 3.996400495744912,
+    "rouge_l": 0.11456542654770081,
+    "meteor": 0.08544782852557971,
+    "num_samples": 30
+  },
+  "test_samples": 30
+}

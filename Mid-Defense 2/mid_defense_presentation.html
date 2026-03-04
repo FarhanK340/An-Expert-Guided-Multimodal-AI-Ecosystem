@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Expert-Guided Multimodal AI Ecosystem - FYP Mid Defense</title>
+
+    <link rel="stylesheet"
+        href="https://api.fontshare.com/v2/css?f[]=cormorant@400,500,600,700&f[]=satoshi@400,500,600,700&display=swap">
+
+    <style>
+        .challenge-row {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+        }
+
+        .challenge-row:last-child {
+            border-bottom: none;
+        }
+
+        .challenge-side,
+        .solution-side {
+            flex: 1;
+            padding: 0 1rem;
+        }
+
+        .challenge-side {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .challenge-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .solution-side .challenge-label {
+            color: var(--accent-green);
+        }
+
+        .timeline {
+            border-left: 2px solid var(--accent);
+            padding-left: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .timeline-item {
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.4rem;
+            top: 0.2rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-text {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (DARK BLUE TECH THEME)
+           =========================================== */
+        :root {
+            /* Colors */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+
+            --accent: #38bdf8;
+            --accent-light: #7dd3fc;
+            --accent-dark: #0284c7;
+            --accent-secondary: #818cf8;
+            --accent-warning: #f472b6;
+            --accent-green: #34d399;
+            --border-color: rgba(56, 189, 248, 0.15);
+            --border-light: rgba(248, 250, 252, 0.08);
+
+            /* Typography */
+            --font-display: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --title-size: clamp(2.5rem, 6vw, 5rem);
+            --h2-size: clamp(2.2rem, 5vw, 3.5rem);
+            --h3-size: clamp(1.4rem, 2.8vw, 2rem);
+            --subtitle-size: clamp(1.3rem, 2.5vw, 1.6rem);
+            --body-size: clamp(1.15rem, 1.8vw, 1.4rem);
+            --small-size: clamp(1rem, 1.3vw, 1.2rem);
+
+            /* Spacing */
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(1.5rem, 3vw, 2.5rem);
+            --element-gap: clamp(0.75rem, 1.5vw, 1.2rem);
+
+            /* Animation */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+            --duration-normal: 0.8s;
+            --duration-fast: 0.4s;
+        }
+
+        /* ===========================================
+           BASE STYLES & RESET
+           =========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            height: 100%;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        /* ===========================================
+           SLIDE CONTAINER
+           =========================================== */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            padding: var(--slide-padding);
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ===========================================
+           TECH BACKGROUND ELEMENTS
+           =========================================== */
+        .botanical {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(80px);
+            animation: drift 20s ease-in-out infinite;
+        }
+
+        .botanical-1 {
+            width: clamp(300px, 40vw, 500px);
+            height: clamp(300px, 40vw, 500px);
+            background: radial-gradient(ellipse at 30% 30%, var(--accent) 0%, transparent 70%);
+            opacity: 0.12;
+            top: -15%;
+            right: -10%;
+        }
+
+        .botanical-2 {
+            width: clamp(200px, 30vw, 400px);
+            height: clamp(200px, 30vw, 400px);
+            background: radial-gradient(ellipse at 70% 70%, var(--accent-secondary) 0%, transparent 70%);
+            opacity: 0.1;
+            bottom: -10%;
+            left: -5%;
+            animation-delay: -10s;
+        }
+
+        .botanical-3 {
+            width: clamp(150px, 20vw, 250px);
+            height: clamp(200px, 25vw, 350px);
+            background: radial-gradient(ellipse, var(--accent-light) 0%, transparent 70%);
+            opacity: 0.08;
+            top: 40%;
+            left: 10%;
+            animation-delay: -5s;
+        }
+
+        @keyframes drift {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(25px, -20px) rotate(3deg);
+            }
+        }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-display);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+
+        h1 {
+            font-size: var(--title-size);
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: var(--h2-size);
+            margin-bottom: var(--element-gap);
+        }
+
+        h3 {
+            font-size: var(--h3-size);
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        .subtitle {
+            font-family: var(--font-body);
+            font-size: var(--subtitle-size);
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 800px;
+            line-height: 1.5;
+        }
+
+        .label {
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .text-accent {
+            color: var(--accent);
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-style: normal;
+            font-weight: 700;
+        }
+
+        /* ===========================================
+           DECORATIVE DIVIDER
+           =========================================== */
+        .divider {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .divider-line {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+
+        .divider-diamond {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            transform: rotate(45deg);
+        }
+
+        /* ===========================================
+           CARDS & CONTAINERS
+           =========================================== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: clamp(1rem, 2vw, 1.75rem);
+            transition: all var(--duration-fast) ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity var(--duration-fast) ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(56, 189, 248, 0.08);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+            gap: var(--element-gap);
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .card-text {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .card.outlined {
+            background: transparent;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ===========================================
+           LISTS
+           =========================================== */
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.5rem, 1vh, 0.875rem);
+        }
+
+        .feature-list li {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            padding-left: 1.75em;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .feature-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.6em;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            transform: rotate(45deg);
+        }
+
+        .numbered-list {
+            list-style: none;
+            counter-reset: item;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.5rem, 1.2vh, 1rem);
+        }
+
+        .numbered-list li {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            line-height: 1.5;
+        }
+
+        .numbered-list li::before {
+            counter-increment: item;
+            content: counter(item, decimal-leading-zero);
+            font-family: var(--font-display);
+            font-size: var(--body-size);
+            font-weight: 600;
+            color: var(--accent);
+            flex-shrink: 0;
+            min-width: 1.5rem;
+        }
+
+        /* ===========================================
+           TAGS & BADGES
+           =========================================== */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.4rem 0.85rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: var(--small-size);
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all var(--duration-fast) ease;
+        }
+
+        .tag:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: var(--body-size);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* ===========================================
+           LAYOUT GRIDS
+           =========================================== */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--content-gap);
+            align-items: start;
+        }
+
+        .two-column.align-center {
+            align-items: center;
+        }
+
+        .uneven-columns {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: var(--content-gap);
+            align-items: start;
+        }
+
+        .uneven-columns.align-center {
+            align-items: center;
+        }
+
+        /* ===========================================
+           IMAGES / PLACEHOLDERS
+           =========================================== */
+        .image-placeholder {
+            width: 100%;
+            height: clamp(300px, 45vh, 500px);
+            background-color: var(--bg-secondary);
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--muted-text);
+            font-style: italic;
+            transition: transform 0.3s;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-placeholder:hover {
+            transform: scale(1.02);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .image-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            /* change to block when image is added */
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity var(--duration-normal) var(--ease-out-cubic), transform var(--duration-normal) var(--ease-out-cubic);
+        }
+
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .reveal:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+
+        .reveal:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .reveal:nth-child(4) {
+            transition-delay: 0.4s;
+        }
+
+        .reveal:nth-child(5) {
+            transition-delay: 0.5s;
+        }
+
+        .reveal:nth-child(6) {
+            transition-delay: 0.6s;
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity var(--duration-normal) var(--ease-out-cubic), transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal-scale {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ===========================================
+           NAVIGATION & UI
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active,
+        .nav-dot:hover {
+            background: var(--accent);
+            transform: scale(1.3);
+        }
+
+        .progress-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-dark), var(--accent), var(--accent-light));
+            z-index: 1001;
+            transition: width var(--duration-fast) ease;
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: var(--font-display);
+            font-size: var(--body-size);
+            font-weight: 500;
+            color: var(--text-muted);
+            z-index: 1000;
+        }
+
+        .slide-counter span {
+            color: var(--accent);
+        }
+
+        /* ===========================================
+           TITLE SLIDE COMPRESSION
+           =========================================== */
+        .title-slide {
+            text-align: center;
+        }
+
+        .title-slide .slide-content {
+            justify-content: center;
+            align-items: center;
+        }
+
+        .title-slide h1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .title-slide .divider {
+            margin: 1rem 0;
+            justify-content: center;
+        }
+
+        .title-slide .subtitle {
+            margin: 0 auto 1.5rem auto !important;
+            max-width: 800px;
+        }
+
+        .team-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .meta-info {
+            margin-top: 1.5rem;
+            font-size: var(--body-size);
+            color: var(--text-muted);
+        }
+
+        /* Rubric Tag Info (Bottom Left) */
+        /*
+        .rubric-tag {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 2.5rem;
+            background-color: var(--bg-tertiary);
+            padding: 5px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            color: var(--accent-light);
+            font-size: var(--small-size);
+            z-index: 1000;
+        }
+        */
+    </style>
+</head>
+
+<body>
+    <div class="progress-indicator" id="progress"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="slide-counter"><span id="currentSlide">01</span> / <span id="totalSlides">17</span></div>
+
+    <!-- SLIDE 1: Title -->
+    <section class="slide title-slide" data-slide="1">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+        <div class="botanical botanical-3"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">FYDP-II Mid Defense</span>
+            <h1 class="reveal">An Expert-Guided <span class="highlight">Multimodal AI</span> Ecosystem</h1>
+
+            <div class="divider reveal">
+                <div class="divider-line"></div>
+                <div class="divider-diamond"></div>
+                <div class="divider-line"></div>
+            </div>
+
+            <p class="subtitle reveal">Comprehensive Multimodal Platform for Enhanced Decision Making and Analysis</p>
+
+            <div class="team-row reveal">
+                    <div class="badge">Farhan Kashif</div>
+                    <div class="badge">Ahmed Sultan</div>
+                </div>
+
+            <p class="meta-info reveal">
+                Advisor: Dr. Muhammad Moazam Fraz <br> Co-Advisor: Dr. Naseer Bajwa
+
+            </p>
+        </div>
+    </section>
+
+    <!-- SLIDE 2: The Problem -->
+    <section class="slide" data-slide="2">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">The Problem</span>
+            <h2 class="reveal">Why an Expert-Guided Ecosystem?</h2>
+
+            <div class="two-column align-center" style="margin-top: var(--content-gap);">
+                <div>
+                    <p class="subtitle reveal"
+                        style="font-size: 1.15rem; color: var(--text-secondary); margin-bottom: 2rem; text-align: left; max-width: 100%;">
+                        An AI-assisted platform is crucial for medical diagnostics where interpretation is highly
+                        complex. Current tools lack the integration to analyze both imaging and textual data securely
+                        and effectively.
+                    </p>
+                    <ul class="feature-list reveal">
+                        <li>Severe specialist and radiologist shortage globally.</li>
+                        <li>Diagnostic review and reporting is manual and time-consuming.</li>
+                        <li>High workload causes physician burnout and delayed diagnosis.</li>
+                        <li>Existing AI lacks human-in-the-loop verification, reducing trust.</li>
+                    </ul>
+                </div>
+
+                <div class="reveal-scale"
+                    style="display: flex; flex-direction: column; gap: 3rem; align-items: center; justify-content: center; padding: 2.5rem; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.15);">
+                    <div style="text-align: center;">
+                        <div
+                            style="font-family: var(--font-display); font-size: clamp(4rem, 5vw, 6rem); font-style: italic; color: var(--accent); font-weight: 700; line-height: 1; text-shadow: 0 4px 20px rgba(56, 189, 248, 0.2);">
+                            ~1.2k</div>
+                        <div
+                            style="font-size: 0.9rem; letter-spacing: 2px; color: var(--text-muted); margin-top: 1rem; text-transform: uppercase; font-weight: 500;">
+                            Radiologists in Pakistan</div>
+                    </div>
+
+                    <div style="width: 60px; height: 1px; background: var(--border-color);"></div>
+
+                    <div style="text-align: center;">
+                        <div
+                            style="font-family: var(--font-display); font-size: clamp(4rem, 5vw, 6rem); font-style: italic; color: var(--accent); font-weight: 700; line-height: 1; text-shadow: 0 4px 20px rgba(56, 189, 248, 0.2);">
+                            15-20</div>
+                        <div
+                            style="font-size: 0.9rem; letter-spacing: 2px; color: var(--text-muted); margin-top: 1rem; text-transform: uppercase; font-weight: 500;">
+                            Min per Scan Review</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 3: Progress Overview -->
+    <section class="slide" data-slide="3">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Development Progress</span>
+            <h3 class="reveal">Implementation Status (~75%)</h3>
+
+            <div class="uneven-columns align-center"
+                style="margin-top: var(--content-gap); grid-template-columns: 0.9fr 1.5fr;">
+                <div class="reveal">
+                    <div class="card" style="padding: 1.25rem;">
+                        <div class="card-title"
+                            style="color: var(--accent-green); margin-bottom: 0.75rem; font-size: 1.15rem;">Completed
+                            Modules</div>
+                        <ul class="feature-list" style="font-size: 0.9em;">
+                            <li>Core AI inference models & pipelines</li>
+                            <li>Backend API architecture (Django)</li>
+                            <li>Database schema & integration</li>
+                            <li>Frontend Dashboard Component Structure</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="reveal-scale">
+                    <img src="Gantt Chart.png"
+                        style="display: block; width: 100%; max-height: 65vh; border-radius: 15px; object-fit: contain;"
+                        alt="Gantt Chart">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 4: System Design -->
+    <section class="slide" data-slide="4">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Technical Architecture</span>
+            <h2 class="reveal">System Design</h2>
+
+            <div class="uneven-columns align-center"
+                style="margin-top: var(--content-gap); grid-template-columns: 1fr 1.6fr;">
+                <div>
+                    <ul class="numbered-list reveal" style="font-size: 0.9em;">
+                        <li><strong>Frontend (React):</strong> Distinct portals for different users capturing images and
+                            text safely.</li>
+                        <li><strong>Backend API (Django):</strong> Secure REST framework handling requests and Celery
+                            tasks.</li>
+                        <li><strong>Inference Engine:</strong> Dedicated models connected via queue for async
+                            processing.</li>
+                        <li><strong>Database:</strong> Relational structured models mapping workflows flawlessly.</li>
+                    </ul>
+                </div>
+                <div class="reveal-scale"
+                    style="height: 65vh; display: flex; justify-content: center; align-items: center;">
+                    <img src="System Architecture.png"
+                        style="display: block; width: 100%; height: 100%; object-fit: contain;"
+                        alt="System Architecture">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 5: AI Model and Results -->
+    <section class="slide" data-slide="5">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Core Intelligence</span>
+            <h3 class="reveal">AI Model & Results</h3>
+
+            <div class="uneven-columns"
+                style="margin-top: var(--content-gap); align-items: start; grid-template-columns: 1fr 1.6fr;">
+                <div>
+                    <div class="card reveal" style="margin-bottom: 0.75rem; padding: 1rem;">
+                        <div class="card-title" style="font-size: 1rem; margin-bottom: 0.35rem;">Model Architecture
+                        </div>
+                        <ul class="feature-list" style="font-size: 0.75em; gap: 0.35rem;">
+                            <li>Multimodal deep learning integrating visual (CNNs/ViTs) and textual components (LLMs).
+                            </li>
+                            <li>Context-aware generation ensuring diagnostic relevance.</li>
+                        </ul>
+                    </div>
+                    <div class="card reveal" style="padding: 1rem;">
+                        <div class="card-title" style="font-size: 1rem; margin-bottom: 0.35rem;">Performance Results
+                        </div>
+                        <ul class="feature-list" style="font-size: 0.75em; gap: 0.35rem;">
+                            <li><strong>Fused MoME+ system:</strong> <span
+                                    style="color: var(--accent-green); font-weight: 700; font-size: 1em;">0.8150</span>
+                                Mean Dice on BraTS 2024 GLI validation set.</li>
+                            <li>Outperforms all individual modality experts.</li>
+                            <li>Confirms the benefit of hierarchical gating fusion.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="reveal-scale" style="height: auto; width: 100%;">
+                    <div
+                        style="background: var(--bg-card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                        <h4
+                            style="text-align: center; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                            Per-Modality Expert Performance (Dice Score)</h4>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--accent); color: var(--accent);">
+                                    <th style="padding: 0.75rem 0.5rem;">Modality</th>
+                                    <th style="padding: 0.75rem 0.5rem;">Mean</th>
+                                    <th style="padding: 0.75rem 0.5rem;">WT</th>
+                                    <th style="padding: 0.75rem 0.5rem;">TC</th>
+                                    <th style="padding: 0.75rem 0.5rem;">ET</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.75rem 0.5rem;">T1</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.7206</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.7822</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.7014</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.6776</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.75rem 0.5rem;">T2</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.7438</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.8251</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.7188</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.6875</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.75rem 0.5rem;">FLAIR</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.6991</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.8338</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.6473</td>
+                                    <td style="padding: 0.75rem 0.5rem;">0.6163</td>
+                                </tr>
+                                <tr style="font-weight: 700;">
+                                    <td style="padding: 0.75rem 0.5rem; color: var(--accent-green);">T1CE</td>
+                                    <td style="padding: 0.75rem 0.5rem; color: var(--accent-green);">0.7889</td>
+                                    <td style="padding: 0.75rem 0.5rem; color: var(--accent-green);">0.7614</td>
+                                    <td style="padding: 0.75rem 0.5rem; color: var(--accent-green);">0.8130</td>
+                                    <td style="padding: 0.75rem 0.5rem; color: var(--accent-green);">0.7922</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 6: Backend Architecture -->
+    <section class="slide" data-slide="6">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Backend</span>
+            <h2 class="reveal">Backend Implementation</h2>
+
+            <div class="card-grid" style="margin-top: var(--content-gap);">
+                <div class="card reveal">
+                    <div class="card-title">Framework & Services</div>
+                    <ul class="feature-list">
+                        <li>Django REST Framework (DRF)</li>
+                        <li>Celery for Async task queues</li>
+                        <li>Redis for caching and message broker</li>
+                        <li>JWT Authentication</li>
+                    </ul>
+                </div>
+                <div class="card reveal">
+                    <div class="card-title">Data Management</div>
+                    <ul class="feature-list">
+                        <li>Relational structure (PostgreSQL)</li>
+                        <li>Secure object storage for imaging</li>
+                        <li>Patient, Case, and Report models</li>
+                    </ul>
+                </div>
+                <div class="card reveal">
+                    <div class="card-title">API Endpoints</div>
+                    <ul class="feature-list">
+                        <li>RBAC controlled operations</li>
+                        <li>Case processing pipelines</li>
+                        <li>Report generation triggers</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 7: Frontend Implementation -->
+    <section class="slide" data-slide="7">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">User Interface</span>
+            <h2 class="reveal">Frontend Implementation</h2>
+
+            <div class="card-grid" style="margin-top: var(--content-gap);">
+                <div class="card reveal">
+                    <div class="card-title">Core Technologies</div>
+                    <ul class="feature-list">
+                        <li>React (Vite) for fast rendering</li>
+                        <li>TailwindCSS / Vanilla CSS styling</li>
+                        <li>Axios for endpoint communication</li>
+                    </ul>
+                </div>
+                <div class="card reveal">
+                    <div class="card-title">State Management</div>
+                    <ul class="feature-list">
+                        <li>Context API for authentication</li>
+                        <li>Dynamic routing based on user role</li>
+                        <li>Real-time processing indicators</li>
+                    </ul>
+                </div>
+                <div class="card reveal">
+                    <div class="card-title">Components</div>
+                    <ul class="feature-list">
+                        <li>Interactive medical visualizers</li>
+                        <li>Structured LLM report editors</li>
+                        <li>Role-assigned dashboard layouts</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="tags reveal" style="margin-top: var(--content-gap); justify-content: center;">
+                <span class="tag">React</span><span class="tag">Dashboard API</span><span class="tag">Tailwind</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 8: Technical Workflow -->
+    <section class="slide" data-slide="8">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <!-- Absolutely positioned full height image container to prevent text shifting -->
+        <div class="reveal-scale"
+            style="position: absolute; right: 0; top: 0; height: 100vh; width: 48vw; display: flex; justify-content: center; align-items: center; z-index: 5;">
+            <img src="auth_flow (1).png" alt="Workflow"
+                style="display: block; width: 100%; height: 100vh; object-fit: contain; padding: 2rem;">
+        </div>
+
+        <div class="slide-content" style="padding-right: 50vw;">
+            <span class="label reveal">Application Demo</span>
+            <h2 class="reveal">Technical Workflow</h2>
+
+            <div style="margin-top: var(--content-gap);">
+                <ol class="numbered-list reveal">
+                    <li>User authenticates based on assigned medical role.</li>
+                    <li>Raw imaging / multimodal formats are securely uploaded.</li>
+                    <li>System validates formatting prior to model queues.</li>
+                    <li>AI processing is triggered autonomously in background.</li>
+                    <li>Results await expert review.</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 9: Doctor & Patient Portals -->
+    <section class="slide" data-slide="9">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Interfaces</span>
+            <h2 class="reveal">Doctor & Patient Portals</h2>
+
+            <div class="two-column" style="margin-top: var(--content-gap);">
+                <div>
+                    <div class="card reveal" style="margin-bottom: 0.75rem; padding: 1rem;">
+                        <div class="card-title" style="color: var(--accent); font-size: 1rem; margin-bottom: 0.35rem;">
+                            Doctor Workflow</div>
+                        <ul class="feature-list" style="font-size: 0.75em; gap: 0.35rem;">
+                            <li>View assigned caseloads and anomalies.</li>
+                            <li>Interactive visualization with AI predicted overlays.</li>
+                            <li>Edit LLM-generated report drafts directly.</li>
+                            <li>Finalize securely preventing AI hallucinations.</li>
+                        </ul>
+                    </div>
+                    <div class="card reveal" style="padding: 1rem;">
+                        <div class="card-title"
+                            style="color: var(--accent-green); font-size: 1rem; margin-bottom: 0.35rem;">Patient Portal
+                        </div>
+                        <ul class="feature-list" style="font-size: 0.75em; gap: 0.35rem;">
+                            <li>Secure read-only portal for personal history.</li>
+                            <li>Download verifiable PDF reports finalized by doctors.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="reveal-scale"
+                    style="height: auto; min-height: 48vh; display: flex; justify-content: center; align-items: center;">
+                    <img src="Dashboard.png" alt="Doctor Portal"
+                        style="display: block; width: 100%; max-height: 50vh; object-fit: contain; border-radius: 8px; border: 1px solid var(--border-color);">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 10: Uploading Scans -->
+    <section class="slide" data-slide="10">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Interface Detailed</span>
+            <h2 class="reveal">Uploading Scans Page</h2>
+
+            <div class="reveal-scale"
+                style="margin-top: 1rem; height: 60vh; display: flex; justify-content: center; align-items: center; padding: 1rem;">
+                <img src="Scan Upload.png" alt="Uploading Scans Page"
+                    style="display: block; width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 11: Uploading Scans -->
+    <section class="slide" data-slide="11">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Interface Detailed</span>
+            <h2 class="reveal">Input MRI Image</h2>
+
+            <div class="reveal-scale"
+                style="margin-top: 1rem; height: 60vh; display: flex; justify-content: center; align-items: center; padding: 1rem;">
+                <img src="Input Mask.png" alt="Input Mask"
+                    style="display: block; width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 12: Uploading Scans -->
+    <section class="slide" data-slide="12">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Interface Detailed</span>
+            <h2 class="reveal">Output Mask</h2>
+
+            <div class="reveal-scale"
+                style="margin-top: 1rem; height: 60vh; display: flex; justify-content: center; align-items: center; padding: 1rem;">
+                <img src="Output Mask.png" alt="Output Mask"
+                    style="display: block; width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 13: Results Page -->
+    <section class="slide" data-slide="13">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Interface Detailed</span>
+            <h2 class="reveal">Analysis & Results Page</h2>
+
+            <div class="reveal-scale"
+                style="margin-top: 1rem; height: 60vh; display: flex; justify-content: center; align-items: center; padding: 1rem;">
+                <img src="Results Page.png" alt="Results Page"
+                    style="display: block; width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 14: Challenges & Solutions -->
+    <section class="slide" data-slide="14">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Lessons Learned</span>
+            <h2 class="reveal">Challenges & Solutions</h2>
+
+            <div class="card reveal" style="margin-top: 1rem;">
+                <div class="challenge-row">
+                    <div class="challenge-side">
+                        <div class="challenge-label">Challenge</div>
+                        <div class="challenge-text">Large imaging files freezing UI threads during uploads & analysis
+                        </div>
+                    </div>
+                    <div class="solution-side">
+                        <div class="challenge-label">Solution</div>
+                        <div class="challenge-text">Implemented async processing with Celery workers & Redis message
+                            queuing</div>
+                    </div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-side">
+                        <div class="challenge-label">Challenge</div>
+                        <div class="challenge-text">LLMs fabricating clinically inaccurate jargon (Hallucinations)</div>
+                    </div>
+                    <div class="solution-side">
+                        <div class="challenge-label">Solution</div>
+                        <div class="challenge-text">Expert-in-the-loop workflow enforcement preventing automated
+                            finalizations</div>
+                    </div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-side">
+                        <div class="challenge-label">Challenge</div>
+                        <div class="challenge-text">Disparate UX goals between patients and clinical practitioners</div>
+                    </div>
+                    <div class="solution-side">
+                        <div class="challenge-label">Solution</div>
+                        <div class="challenge-text">Role-based dynamic routing serving specialized UI dashboards</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 13: Testing -->
+    <section class="slide" data-slide="15">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Quality Assurance</span>
+            <h2 class="reveal">Testing Plan</h2>
+
+            <div class="card-grid reveal" style="margin-top: var(--content-gap);">
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">Functional Testing</h3>
+                    <ul class="feature-list">
+                        <li><strong>Unit Testing:</strong> Code coverage on core utilities.</li>
+                        <li><strong>Integration:</strong> API interaction and Inference pipelines.</li>
+                        <li><strong>System/UAT:</strong> Full end-user flow from upload to report export.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">Non-Functional Testing</h3>
+                    <ul class="feature-list">
+                        <li><strong>Performance:</strong> Optimization of network payload delays.</li>
+                        <li><strong>Security:</strong> Protected routing, token verifications.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 14: UN SDGs -->
+    <section class="slide" data-slide="16">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Global Impact</span>
+            <h2 class="reveal">UN Sustainable Development Goals</h2>
+
+            <div class="two-column align-center" style="margin-top: var(--content-gap);">
+                <div>
+                    <h3 class="reveal" style="color: var(--accent); margin-bottom: 1rem;">SDG Target Alignments</h3>
+                    <ul class="feature-list reveal">
+                        <li><strong>SDG 3 (Health and Well-being):</strong> Scalable, AI-assisted decision making
+                            accelerates clinical workflows and improves diagnostic accessibility.</li>
+                        <li><strong>SDG 9 (Industry, Innovation):</strong> Bridges autonomous AI predictions with robust
+                            human expertise, innovating secure hospital infrastructure.</li>
+                    </ul>
+
+                    <h3 class="reveal" style="color: var(--accent); margin-top: 1.5rem; margin-bottom: 1rem;">Commercial
+                        Potential</h3>
+                    <ul class="feature-list reveal">
+                        <li>Systemic auditability perfectly aligns with stringent regulatory guidelines.</li>
+                    </ul>
+                </div>
+                <div class="two-column align-center reveal-scale">
+                    <img src="UN SDG 3.png"
+                        style="display: block; width: 100%; object-fit: contain; max-height: 30vh; border-radius: 8px;"
+                        alt="SDG 3">
+                    <img src="UN SDG 9.png"
+                        style="display: block; width: 100%; object-fit: contain; max-height: 30vh; border-radius: 8px;"
+                        alt="SDG 9">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 15: Project Management -->
+    <section class="slide" data-slide="17">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Tracked Execution</span>
+            <h2 class="reveal">Project Management</h2>
+
+            <div class="uneven-columns align-center" style="margin-top: var(--content-gap);">
+                <div>
+                    <div class="card reveal" style="margin-bottom: var(--element-gap);">
+                        <h3 style="margin-bottom: 0.75rem;">Tools & Methodology</h3>
+                        <ul class="feature-list">
+                            <li><strong>Trello:</strong> Sprint planning and visual task tracking.</li>
+                            <li><strong>GitHub:</strong> Version control and collaboration.</li>
+                            <li><strong>Agile:</strong> Iterative development bridging backend to frontend seamlessly.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="image-placeholder reveal-scale"
+                    style="height: 50vh; background: transparent; border: none; padding: 0;">
+                    <img src="Trello Board.png"
+                        style="display: block; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); width: 100%; height: 100%; object-fit: fit;"
+                        alt="Trello Board">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 16: Remaining Work -->
+    <section class="slide" data-slide="18">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Road to Final</span>
+            <h2 class="reveal">Remaining Work & Timeline</h2>
+
+            <div class="card-grid" style="margin-top: var(--content-gap);">
+                <div class="card reveal timeline-card" style="grid-column: span 1.5;">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-title" style="color: var(--accent);">Reporting Robustness</div>
+                            <div class="timeline-text">Finalizing mapping pipelines connecting varied AI modalities into
+                                a unified PDF structure safely.</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title" style="color: var(--accent-green);">End-to-end Feedback Loop
+                            </div>
+                            <div class="timeline-text">Optimizing clinician interface interactions with LLM outputs
+                                natively.</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title" style="color: var(--accent-warning);">Cloud CI/CD Targeting
+                            </div>
+                            <div class="timeline-text">Containerizing architecture for straightforward final deployment
+                                cycles and scale tests.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 17: Q&A -->
+    <section class="slide title-slide" data-slide="19">
+        <div class="botanical botanical-1"></div>
+        <div class="botanical botanical-2"></div>
+        <div class="botanical botanical-3"></div>
+
+        <div class="slide-content">
+            <span class="label reveal">Demonstration</span>
+            <h1 class="reveal">Thank You </h1>
+
+            <div class="divider reveal" style="justify-content: center;">
+                <div class="divider-line"></div>
+                <div class="divider-diamond"></div>
+                <div class="divider-line"></div>
+            </div>
+
+            <p class="subtitle reveal" style="margin: 0 auto var(--content-gap) auto;">We appreciate your time.
+                Questions & Answers</p>
+
+            <div class="team-row reveal">
+                <div class="badge">Farhan Kashif</div>
+                <div class="badge">Ahmed Sultan</div>
+            </div>
+
+            <p class="meta-info reveal" style="font-size: var(--body-size); color: var(--accent);">
+                Expert-Guided Multimodal AI Ecosystem
+            </p>
+        </div>
+    </section>
+
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.totalSlides = this.slides.length;
+                this.currentSlide = 0;
+                this.init();
+            }
+
+            init() {
+                document.getElementById('totalSlides').textContent = String(this.totalSlides);
+                this.createNavDots();
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupScrollDetection();
+                this.updateUI();
+            }
+
+            createNavDots() {
+                const navDots = document.getElementById('navDots');
+                this.slides.forEach((slide, index) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot';
+                    dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+                    dot.addEventListener('click', () => this.goToSlide(index));
+                    navDots.appendChild(dot);
+                });
+            }
+
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const slideIndex = parseInt(entry.target.dataset.slide) - 1;
+                            this.currentSlide = slideIndex;
+                            this.updateUI();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    switch (e.key) {
+                        case 'ArrowDown': case 'ArrowRight': case ' ': case 'PageDown':
+                            e.preventDefault(); this.nextSlide(); break;
+                        case 'ArrowUp': case 'ArrowLeft': case 'PageUp':
+                            e.preventDefault(); this.prevSlide(); break;
+                        case 'Home':
+                            e.preventDefault(); this.goToSlide(0); break;
+                        case 'End':
+                            e.preventDefault(); this.goToSlide(this.totalSlides - 1); break;
+                    }
+                });
+            }
+
+            setupTouchNav() {
+                let touchStartY = 0; let touchStartX = 0;
+                document.addEventListener('touchstart', (e) => {
+                    touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX;
+                }, { passive: true });
+                document.addEventListener('touchend', (e) => {
+                    const diffY = touchStartY - e.changedTouches[0].clientY;
+                    const diffX = touchStartX - e.changedTouches[0].clientX;
+                    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 50) {
+                        diffY > 0 ? this.nextSlide() : this.prevSlide();
+                    }
+                }, { passive: true });
+            }
+
+            setupScrollDetection() {
+                let scrollTimeout;
+                window.addEventListener('scroll', () => {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        const currentIndex = Math.round(window.scrollY / window.innerHeight);
+                        if (currentIndex !== this.currentSlide && currentIndex >= 0 && currentIndex < this.totalSlides) {
+                            this.currentSlide = currentIndex;
+                            this.updateUI();
+                        }
+                    }, 50);
+                }, { passive: true });
+            }
+
+            goToSlide(index) {
+                if (index >= 0 && index < this.totalSlides) {
+                    this.currentSlide = index;
+                    this.slides[index].scrollIntoView({ behavior: 'smooth' });
+                    this.updateUI();
+                }
+            }
+            nextSlide() { if (this.currentSlide < this.totalSlides - 1) this.goToSlide(this.currentSlide + 1); }
+            prevSlide() { if (this.currentSlide > 0) this.goToSlide(this.currentSlide - 1); }
+
+            updateUI() {
+                document.getElementById('currentSlide').textContent = String(this.currentSlide + 1).padStart(2, '0');
+                document.getElementById('progress').style.width = `${((this.currentSlide + 1) / this.totalSlides) * 100}%`;
+                document.querySelectorAll('.nav-dot').forEach((dot, index) => dot.classList.toggle('active', index === this.currentSlide));
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => new SlidePresentation());
+    </script>
+</body>
+
+</html>

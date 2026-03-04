@@ -1,0 +1,267 @@
+{
+  "patient_info": {
+    "case_id": "BraTS-GLI-00006-100",
+    "scan_date": "2026-01-29"
+  },
+  "imaging_metadata": {
+    "modalities": [
+      "T1",
+      "T1ce",
+      "T2",
+      "FLAIR"
+    ],
+    "scanner_info": {
+      "manufacturer": "Unknown",
+      "field_strength": 3.0,
+      "resolution_mm": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "segmentation_results": {
+    "tumor_components": {
+      "enhancing_tumor": {
+        "present": true,
+        "volume_mm3": 22074.0,
+        "voxel_count": 22074,
+        "confidence_score": 0.9,
+        "centroid_coords": [
+          107.81670743861557,
+          174.86975627434992,
+          84.28232309504395
+        ]
+      },
+      "necrotic_core": {
+        "present": false,
+        "volume_mm3": 0.0,
+        "voxel_count": 0,
+        "confidence_score": 0.0,
+        "centroid_coords": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "peritumoral_edema": {
+        "present": true,
+        "volume_mm3": 17907.0,
+        "voxel_count": 17907,
+        "confidence_score": 0.9,
+        "centroid_coords": [
+          107.1325738538002,
+          159.60914726084772,
+          94.92656503043503
+        ]
+      }
+    },
+    "volumetric_analysis": {
+      "total_tumor_volume_mm3": 39981.0,
+      "whole_tumor_volume_mm3": 39981.0,
+      "tumor_core_volume_mm3": 22074.0,
+      "enhancing_volume_mm3": 22074.0,
+      "necrosis_percentage": 0.0
+    },
+    "confidence_metrics": {
+      "mean_dice_score": 0.88,
+      "per_class_confidence": {
+        "enhancing_tumor": 0.92,
+        "necrotic_core": 0.88,
+        "edema": 0.85
+      }
+    }
+  },
+  "anatomical_mapping": {
+    "atlas_name": "harvard_oxford",
+    "registration_method": "affine",
+    "affected_regions": [
+      {
+        "region_id": 28,
+        "region_name": "Paracingulate Gyrus",
+        "tumor_voxels": 3517,
+        "total_voxels": 23252,
+        "percentage_involvement": 15.13,
+        "tumor_volume_in_region_mm3": 3517
+      },
+      {
+        "region_id": 1,
+        "region_name": "Frontal Pole",
+        "tumor_voxels": 12768,
+        "total_voxels": 120948,
+        "percentage_involvement": 10.56,
+        "tumor_volume_in_region_mm3": 12768
+      },
+      {
+        "region_id": 41,
+        "region_name": "Frontal Operculum Cortex",
+        "tumor_voxels": 217,
+        "total_voxels": 5313,
+        "percentage_involvement": 4.08,
+        "tumor_volume_in_region_mm3": 217
+      },
+      {
+        "region_id": 29,
+        "region_name": "Cingulate Gyrus, anterior",
+        "tumor_voxels": 612,
+        "total_voxels": 20844,
+        "percentage_involvement": 2.94,
+        "tumor_volume_in_region_mm3": 612
+      },
+      {
+        "region_id": 3,
+        "region_name": "Superior Frontal Gyrus",
+        "tumor_voxels": 1242,
+        "total_voxels": 45246,
+        "percentage_involvement": 2.74,
+        "tumor_volume_in_region_mm3": 1242
+      },
+      {
+        "region_id": 5,
+        "region_name": "Inferior Frontal Gyrus, pars triangularis",
+        "tumor_voxels": 165,
+        "total_voxels": 9503,
+        "percentage_involvement": 1.74,
+        "tumor_volume_in_region_mm3": 165
+      },
+      {
+        "region_id": 4,
+        "region_name": "Middle Frontal Gyrus",
+        "tumor_voxels": 655,
+        "total_voxels": 45499,
+        "percentage_involvement": 1.44,
+        "tumor_volume_in_region_mm3": 655
+      },
+      {
+        "region_id": 2,
+        "region_name": "Insular Cortex",
+        "tumor_voxels": 26,
+        "total_voxels": 21449,
+        "percentage_involvement": 0.12,
+        "tumor_volume_in_region_mm3": 26
+      },
+      {
+        "region_id": 33,
+        "region_name": "Frontal Orbital Cortex",
+        "tumor_voxels": 20,
+        "total_voxels": 25157,
+        "percentage_involvement": 0.08,
+        "tumor_volume_in_region_mm3": 20
+      }
+    ],
+    "subregion_mapping": {
+      "enhancing_tumor": [
+        {
+          "region_id": 28,
+          "region_name": "Paracingulate Gyrus",
+          "percentage_involvement": 13.18,
+          "tumor_volume_in_region_mm3": 3064
+        },
+        {
+          "region_id": 1,
+          "region_name": "Frontal Pole",
+          "percentage_involvement": 7.84,
+          "tumor_volume_in_region_mm3": 9477
+        },
+        {
+          "region_id": 3,
+          "region_name": "Superior Frontal Gyrus",
+          "percentage_involvement": 0.88,
+          "tumor_volume_in_region_mm3": 397
+        },
+        {
+          "region_id": 29,
+          "region_name": "Cingulate Gyrus, anterior",
+          "percentage_involvement": 0.25,
+          "tumor_volume_in_region_mm3": 52
+        },
+        {
+          "region_id": 33,
+          "region_name": "Frontal Orbital Cortex",
+          "percentage_involvement": 0.08,
+          "tumor_volume_in_region_mm3": 19
+        },
+        {
+          "region_id": 5,
+          "region_name": "Inferior Frontal Gyrus, pars triangularis",
+          "percentage_involvement": 0.04,
+          "tumor_volume_in_region_mm3": 4
+        }
+      ],
+      "necrotic_core": [],
+      "peritumoral_edema": [
+        {
+          "region_id": 41,
+          "region_name": "Frontal Operculum Cortex",
+          "percentage_involvement": 4.08,
+          "tumor_volume_in_region_mm3": 217
+        },
+        {
+          "region_id": 1,
+          "region_name": "Frontal Pole",
+          "percentage_involvement": 2.72,
+          "tumor_volume_in_region_mm3": 3291
+        },
+        {
+          "region_id": 29,
+          "region_name": "Cingulate Gyrus, anterior",
+          "percentage_involvement": 2.69,
+          "tumor_volume_in_region_mm3": 560
+        },
+        {
+          "region_id": 28,
+          "region_name": "Paracingulate Gyrus",
+          "percentage_involvement": 1.95,
+          "tumor_volume_in_region_mm3": 453
+        },
+        {
+          "region_id": 3,
+          "region_name": "Superior Frontal Gyrus",
+          "percentage_involvement": 1.87,
+          "tumor_volume_in_region_mm3": 845
+        },
+        {
+          "region_id": 5,
+          "region_name": "Inferior Frontal Gyrus, pars triangularis",
+          "percentage_involvement": 1.69,
+          "tumor_volume_in_region_mm3": 161
+        },
+        {
+          "region_id": 4,
+          "region_name": "Middle Frontal Gyrus",
+          "percentage_involvement": 1.44,
+          "tumor_volume_in_region_mm3": 655
+        },
+        {
+          "region_id": 2,
+          "region_name": "Insular Cortex",
+          "percentage_involvement": 0.12,
+          "tumor_volume_in_region_mm3": 26
+        },
+        {
+          "region_id": 33,
+          "region_name": "Frontal Orbital Cortex",
+          "percentage_involvement": 0.0,
+          "tumor_volume_in_region_mm3": 1
+        }
+      ]
+    },
+    "hemisphere": "right",
+    "crossing_midline": true
+  },
+  "model_metadata": {
+    "model_name": "MoME+",
+    "model_version": "v1.0.0",
+    "training_datasets": [
+      "BraTS2021"
+    ],
+    "inference_timestamp": "2026-01-29T10:51:42.719623Z",
+    "processing_time_seconds": 15.2
+  },
+  "clinical_features": {
+    "mass_effect": true,
+    "ventricular_involvement": false,
+    "eloquent_area_involvement": [],
+    "estimated_grade": "unknown"
+  }
+}

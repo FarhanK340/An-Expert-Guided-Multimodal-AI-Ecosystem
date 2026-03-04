@@ -1,0 +1,125 @@
+.signup-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--neutral-50) 100%);
+    padding: var(--spacing-2xl) var(--spacing-xl);
+}
+
+.signup-container {
+    width: 100%;
+    max-width: 600px;
+}
+
+.signup-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.signup-header {
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-xl);
+    background: linear-gradient(180deg, var(--primary-50) 0%, white 100%);
+}
+
+.signup-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--spacing-md);
+}
+
+.signup-logo-icon {
+    color: white;
+}
+
+.signup-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--neutral-900);
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.signup-subtitle {
+    font-size: 0.9375rem;
+    color: var(--neutral-600);
+    margin: 0;
+}
+
+.signup-form {
+    padding: var(--spacing-xl);
+}
+
+.form-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--neutral-900);
+    margin: 0 0 var(--spacing-lg) 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.form-hint {
+    font-size: 0.75rem;
+    color: var(--neutral-500);
+    margin: 0.25rem 0 0 0;
+}
+
+.signup-button {
+    width: 100%;
+    margin-top: var(--spacing-md);
+}
+
+.signup-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.signup-footer {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background-color: var(--neutral-50);
+    border-top: 1px solid var(--neutral-200);
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: var(--primary-600);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
+    font-family: inherit;
+}
+
+.link-button:hover {
+    color: var(--primary-700);
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

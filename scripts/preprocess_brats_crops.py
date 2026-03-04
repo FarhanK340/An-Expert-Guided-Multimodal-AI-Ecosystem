@@ -220,7 +220,7 @@ def preprocess_dataset_with_split(input_dirs, output_dir, train_ratio=0.8, crop_
 
 def main():
     parser = argparse.ArgumentParser(description="Preprocess BraTS2024 dataset with train/val split")
-    parser.add_argument("--output_dir", type=str, default="data/preprocessed",
+    parser.add_argument("--output_dir", type=str, default="./../data/preprocessed",
                         help="Output directory")
     parser.add_argument("--crop_size", type=int, default=128,
                         help="Crop size (default: 128 for 128x128x128)")
@@ -234,8 +234,8 @@ def main():
     
     # Training data directories (BraTS val data has NO masks, so we split training data)
     train_dirs = [
-        "g:/FYP/synapsedownloads/Brats2024/BratsGLI/training_data1_v2",
-        "g:/FYP/synapsedownloads/Brats2024/BratsGLI/training_data_additional"
+        "E:/Farhan FYP/dataset_script/brats_data/brats2024/brats2024-brats-gli-trainingdata/training_data1_v2",
+        "E:/Farhan FYP/dataset_script/brats_data/brats2024/brats2024-brats-gli-additionaltrainingdata/training_data_additional"
     ]
     
     crop_size = (args.crop_size, args.crop_size, args.crop_size)

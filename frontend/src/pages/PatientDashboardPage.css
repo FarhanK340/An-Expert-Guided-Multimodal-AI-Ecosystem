@@ -1,0 +1,126 @@
+.patient-dashboard {
+    max-width: 900px;
+}
+
+.patient-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .patient-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Reuse existing stat-card styles */
+.reports-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    gap: 1rem;
+    transition: background 0.15s;
+}
+
+.report-row:last-child {
+    border-bottom: none;
+}
+
+.report-row:hover {
+    background: var(--bg-secondary);
+}
+
+.report-row-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.report-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.status-icon {
+    flex-shrink: 0;
+}
+
+.status-icon.status-done {
+    color: var(--color-success, #10B981);
+}
+
+.status-icon.status-pending {
+    color: var(--color-warning, #F59E0B);
+}
+
+.status-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--bg-secondary);
+    text-transform: capitalize;
+}
+
+.status-label.status-final,
+.status-label.status-approved {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.status-label.status-draft,
+.status-label.status-pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.report-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.15rem;
+}
+
+.report-meta {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.report-row-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.empty-reports {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.patient-info-note {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--color-primary);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}

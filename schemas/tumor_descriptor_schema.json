@@ -1,0 +1,360 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "BrainTumorSegmentationDescriptor",
+    "type": "object",
+    "required": [
+        "patient_info",
+        "imaging_metadata",
+        "segmentation_results",
+        "anatomical_mapping",
+        "model_metadata"
+    ],
+    "properties": {
+        "patient_info": {
+            "type": "object",
+            "required": [
+                "case_id"
+            ],
+            "properties": {
+                "case_id": {
+                    "type": "string",
+                    "description": "Unique patient identifier (anonymized)"
+                },
+                "age": {
+                    "type": "integer",
+                    "description": "Patient age in years (optional)"
+                },
+                "sex": {
+                    "type": "string",
+                    "enum": [
+                        "M",
+                        "F",
+                        "Unknown"
+                    ]
+                },
+                "scan_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "MRI acquisition date (YYYY-MM-DD)"
+                }
+            }
+        },
+        "imaging_metadata": {
+            "type": "object",
+            "required": [
+                "modalities",
+                "scanner_info"
+            ],
+            "properties": {
+                "modalities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "T1",
+                            "T1ce",
+                            "T2",
+                            "FLAIR"
+                        ]
+                    },
+                    "description": "MRI sequences used"
+                },
+                "scanner_info": {
+                    "type": "object",
+                    "properties": {
+                        "manufacturer": {
+                            "type": "string"
+                        },
+                        "field_strength": {
+                            "type": "number",
+                            "description": "Tesla (e.g., 1.5, 3.0)"
+                        },
+                        "resolution_mm": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            },
+                            "description": "[x, y, z] voxel spacing"
+                        }
+                    }
+                }
+            }
+        },
+        "segmentation_results": {
+            "type": "object",
+            "required": [
+                "tumor_components",
+                "volumetric_analysis"
+            ],
+            "properties": {
+                "tumor_components": {
+                    "type": "object",
+                    "description": "Per-label segmentation details",
+                    "properties": {
+                        "enhancing_tumor": {
+                            "$ref": "#/definitions/tumor_component"
+                        },
+                        "necrotic_core": {
+                            "$ref": "#/definitions/tumor_component"
+                        },
+                        "peritumoral_edema": {
+                            "$ref": "#/definitions/tumor_component"
+                        }
+                    }
+                },
+                "volumetric_analysis": {
+                    "type": "object",
+                    "required": [
+                        "total_tumor_volume_mm3"
+                    ],
+                    "properties": {
+                        "total_tumor_volume_mm3": {
+                            "type": "number"
+                        },
+                        "whole_tumor_volume_mm3": {
+                            "type": "number"
+                        },
+                        "tumor_core_volume_mm3": {
+                            "type": "number"
+                        },
+                        "enhancing_volume_mm3": {
+                            "type": "number"
+                        },
+                        "necrosis_percentage": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                        }
+                    }
+                },
+                "confidence_metrics": {
+                    "type": "object",
+                    "properties": {
+                        "mean_dice_score": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        },
+                        "per_class_confidence": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "anatomical_mapping": {
+            "type": "object",
+            "required": [
+                "atlas_name",
+                "affected_regions"
+            ],
+            "properties": {
+                "atlas_name": {
+                    "type": "string",
+                    "enum": [
+                        "harvard_oxford",
+                        "AAL3",
+                        "MNI152",
+                        "Julich"
+                    ]
+                },
+                "registration_method": {
+                    "type": "string",
+                    "enum": [
+                        "affine",
+                        "ANTs_SyN",
+                        "SPM_DARTEL"
+                    ]
+                },
+                "affected_regions": {
+                    "type": "array",
+                    "description": "Brain regions affected by tumor",
+                    "items": {
+                        "$ref": "#/definitions/affected_region"
+                    }
+                },
+                "subregion_mapping": {
+                    "type": "object",
+                    "description": "Per tumor component region mapping",
+                    "properties": {
+                        "enhancing_tumor": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/affected_region"
+                            }
+                        },
+                        "necrotic_core": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/affected_region"
+                            }
+                        },
+                        "peritumoral_edema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/affected_region"
+                            }
+                        }
+                    }
+                },
+                "hemisphere": {
+                    "type": "string",
+                    "enum": [
+                        "left",
+                        "right",
+                        "bilateral"
+                    ]
+                },
+                "crossing_midline": {
+                    "type": "boolean",
+                    "description": "Whether tumor crosses corpus callosum"
+                }
+            }
+        },
+        "model_metadata": {
+            "type": "object",
+            "required": [
+                "model_name",
+                "model_version"
+            ],
+            "properties": {
+                "model_name": {
+                    "type": "string",
+                    "description": "e.g., MoME+, SegResNet"
+                },
+                "model_version": {
+                    "type": "string",
+                    "description": "Version identifier"
+                },
+                "training_datasets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Datasets used for training"
+                },
+                "inference_timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "processing_time_seconds": {
+                    "type": "number"
+                }
+            }
+        },
+        "clinical_features": {
+            "type": "object",
+            "description": "Optional derived clinical indicators",
+            "properties": {
+                "mass_effect": {
+                    "type": "boolean",
+                    "description": "Evidence of mass effect/midline shift"
+                },
+                "ventricular_involvement": {
+                    "type": "boolean"
+                },
+                "eloquent_area_involvement": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "motor_cortex",
+                            "speech_area",
+                            "visual_cortex",
+                            "brainstem"
+                        ]
+                    }
+                },
+                "estimated_grade": {
+                    "type": "string",
+                    "enum": [
+                        "low_grade",
+                        "high_grade",
+                        "unknown"
+                    ],
+                    "description": "Imaging-based estimate (not diagnostic)"
+                }
+            }
+        }
+    },
+    "definitions": {
+        "tumor_component": {
+            "type": "object",
+            "required": [
+                "present",
+                "volume_mm3"
+            ],
+            "properties": {
+                "present": {
+                    "type": "boolean",
+                    "description": "Whether this component was detected"
+                },
+                "volume_mm3": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "voxel_count": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "confidence_score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "centroid_coords": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "[x, y, z] in mm (MNI space)"
+                }
+            }
+        },
+        "affected_region": {
+            "type": "object",
+            "required": [
+                "region_id",
+                "region_name",
+                "percentage_involvement",
+                "tumor_volume_in_region_mm3"
+            ],
+            "properties": {
+                "region_id": {
+                    "type": "integer",
+                    "description": "Atlas region identifier"
+                },
+                "region_name": {
+                    "type": "string",
+                    "description": "Anatomical name (e.g., 'Middle Frontal Gyrus')"
+                },
+                "percentage_involvement": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "% of region occupied by tumor"
+                },
+                "tumor_volume_in_region_mm3": {
+                    "type": "number"
+                },
+                "total_region_volume_mm3": {
+                    "type": "number"
+                },
+                "hemisphere": {
+                    "type": "string",
+                    "enum": [
+                        "left",
+                        "right"
+                    ]
+                }
+            }
+        }
+    }
+}

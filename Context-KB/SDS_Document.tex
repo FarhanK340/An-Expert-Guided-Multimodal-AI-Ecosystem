@@ -1,0 +1,1194 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+
+% Page setup
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{SDS - Expert-Guided Multimodal AI Ecosystem}
+\lhead{SEECS, NUST}
+\rfoot{Page \thepage}
+
+% Title formatting
+\titleformat{\section}
+  {\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+% Code listing settings
+\lstset{
+    basicstyle=\ttfamily\small,
+    commentstyle=\color{gray},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray}
+}
+
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\huge\bfseries Software Design Specifications\par}
+    \vspace{1cm}
+    
+    {\Large\bfseries An Expert-Guided Multimodal AI Ecosystem for\par}
+    {\Large\bfseries Brain MRI Analysis and Clinical Report Generation\par}
+    \vspace{2cm}
+    
+    {\Large Final Year Design Project\par}
+    \vspace{1cm}
+    
+    {\large School of Electrical Engineering and Computer Science (SEECS)\par}
+    {\large National University of Sciences and Technology (NUST)\par}
+    \vspace{2cm}
+    
+    {\large\bfseries Submitted By:\par}
+    {\large Farhan Ahmed\par}
+    \vspace{1cm}
+    
+    {\large\bfseries Submission Date:\par}
+    {\large \today\par}
+    
+    \vfill
+\end{titlepage}
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+% Document History
+\section*{Document History}
+\addcontentsline{toc}{section}{Document History}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|c|c|X|c|}
+\hline
+\textbf{Version} & \textbf{Date} & \textbf{Description} & \textbf{Author} \\
+\hline
+1.0 & \today & Initial SDS Document & Farhan Ahmed \\
+\hline
+\end{tabularx}
+\end{table}
+
+\newpage
+
+% 1. Introduction
+\section{Introduction}
+
+\subsection{Purpose}
+This Software Design Specifications (SDS) document provides a comprehensive architectural and detailed design for the Expert-Guided Multimodal AI Ecosystem for Brain MRI Analysis and Clinical Report Generation. The document serves as a blueprint for the implementation, testing, and deployment of the system.
+
+\subsection{Scope}
+The system is designed to provide an end-to-end solution for medical image analysis with the following key capabilities:
+
+\begin{itemize}
+    \item Multi-modal brain MRI segmentation using Mixture of Modality Experts (MoME+) architecture
+    \item Continual learning capabilities with knowledge retention across multiple datasets
+    \item Brain atlas mapping for anatomical localization
+    \item Automated clinical report generation using fine-tuned Large Language Models
+    \item Web-based dashboard for visualization and interaction
+    \item RESTful API for integration with clinical workflows
+\end{itemize}
+
+\subsection{Definitions, Acronyms, and Abbreviations}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Term} & \textbf{Definition} \\
+\hline
+MoME+ & Mixture of Modality Experts Plus - Enhanced architecture for multi-modal medical image segmentation \\
+\hline
+BraTS & Brain Tumor Segmentation Challenge Dataset \\
+\hline
+FLAIR & Fluid-Attenuated Inversion Recovery MRI sequence \\
+\hline
+WT & Whole Tumor region \\
+\hline
+TC & Tumor Core region \\
+\hline
+ET & Enhancing Tumor region \\
+\hline
+EWC & Elastic Weight Consolidation - Continual learning technique \\
+\hline
+LoRA & Low-Rank Adaptation for efficient LLM fine-tuning \\
+\hline
+PEFT & Parameter-Efficient Fine-Tuning \\
+\hline
+CBAM & Convolutional Block Attention Module \\
+\hline
+SE & Squeeze-and-Excitation attention mechanism \\
+\hline
+MNI152 & Montreal Neurological Institute standard brain atlas \\
+\hline
+API & Application Programming Interface \\
+\hline
+REST & Representational State Transfer \\
+\hline
+LLM & Large Language Model \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{References}
+\begin{enumerate}
+    \item Software Requirements Specification (SRS) Document - Project SRS
+    \item IEEE Std 1016-2009 - IEEE Standard for Information Technology Systems Design
+    \item BraTS Challenge Documentation
+    \item MedGemma-4B Model Documentation
+    \item Django REST Framework Documentation
+\end{enumerate}
+
+\subsection{Overview}
+This document is organized into the following sections:
+
+\begin{itemize}
+    \item \textbf{Section 2:} System Architecture - High-level architectural design
+    \item \textbf{Section 3:} Data Design - Database schema and data structures
+    \item \textbf{Section 4:} Component Design - Detailed module specifications
+    \item \textbf{Section 5:} Interface Design - API and UI specifications
+    \item \textbf{Section 6:} Security Design - Authentication and authorization
+    \item \textbf{Section 7:} Deployment Design - Infrastructure and deployment
+\end{itemize}
+
+\newpage
+
+% 2. System Architecture
+\section{System Architecture}
+
+\subsection{Architectural Overview}
+The system follows a modular, microservices-inspired architecture with clear separation of concerns. The architecture is designed to support scalability, maintainability, and extensibility.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/system_architecture.png}
+\caption{High-Level System Architecture}
+\label{fig:system_arch}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/system\_architecture.puml}
+
+\subsection{Architectural Patterns}
+
+\subsubsection{Layered Architecture}
+The system employs a 4-tier layered architecture:
+
+\begin{enumerate}
+    \item \textbf{Presentation Layer:} Web-based dashboard (React/TypeScript)
+    \item \textbf{Application Layer:} Business logic and orchestration (Django REST Framework)
+    \item \textbf{Domain Layer:} Core ML models and algorithms (PyTorch)
+    \item \textbf{Data Layer:} Data persistence and management (PostgreSQL, File Storage)
+\end{enumerate}
+
+\subsubsection{Model-View-Controller (MVC)}
+The backend follows the MVC pattern:
+\begin{itemize}
+    \item \textbf{Model:} Django ORM models for data representation
+    \item \textbf{View:} DRF ViewSets for request handling
+    \item \textbf{Controller:} Business logic in service classes
+\end{itemize}
+
+\subsubsection{Pipeline Pattern}
+The inference workflow follows a pipeline pattern:
+\begin{equation}
+\text{Input} \xrightarrow{\text{Preprocess}} \text{Segmentation} \xrightarrow{\text{Atlas Mapping}} \text{JSON} \xrightarrow{\text{LLM}} \text{Report}
+\end{equation}
+
+\subsection{Component Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/component_diagram.png}
+\caption{Component Diagram}
+\label{fig:component}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/component\_diagram.puml}
+
+\subsection{Technology Stack}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Layer} & \textbf{Technology} & \textbf{Purpose} \\
+\hline
+Frontend & React 18+ & User interface framework \\
+ & TypeScript & Type-safe development \\
+ & TailwindCSS & Styling framework \\
+\hline
+Backend & Django 4.2+ & Web framework \\
+ & Django REST Framework & API development \\
+ & Celery & Asynchronous task processing \\
+ & Redis & Message broker and caching \\
+\hline
+ML Framework & PyTorch 2.0+ & Deep learning framework \\
+ & MONAI & Medical imaging library \\
+ & Transformers & LLM integration \\
+ & nibabel & NIfTI file handling \\
+\hline
+Database & PostgreSQL 14+ & Relational database \\
+ & MinIO / S3 & Object storage for MRI files \\
+\hline
+Deployment & Docker & Containerization \\
+ & Docker Compose & Multi-container orchestration \\
+ & Nginx & Reverse proxy \\
+ & Gunicorn & WSGI server \\
+\hline
+\end{tabularx}
+\end{table}
+
+\newpage
+
+% 3. Data Design
+\section{Data Design}
+
+\subsection{Entity-Relationship Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/erd_diagram.png}
+\caption{Entity-Relationship Diagram}
+\label{fig:erd}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/erd\_diagram.puml}
+
+\subsection{Database Schema}
+
+\subsubsection{Patient Table}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} & \textbf{Description} \\
+\hline
+patient\_id & UUID & PRIMARY KEY & Unique patient identifier \\
+patient\_code & VARCHAR(50) & UNIQUE, NOT NULL & Anonymized patient code \\
+age & INTEGER & CHECK (age > 0) & Patient age \\
+sex & CHAR(1) & CHECK (sex IN ('M','F','O')) & Patient sex \\
+created\_at & TIMESTAMP & DEFAULT NOW() & Record creation time \\
+updated\_at & TIMESTAMP & ON UPDATE NOW() & Last update time \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{MRI Scan Table}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} & \textbf{Description} \\
+\hline
+scan\_id & UUID & PRIMARY KEY & Unique scan identifier \\
+patient\_id & UUID & FOREIGN KEY & Reference to patient \\
+scan\_date & DATE & NOT NULL & Date of MRI acquisition \\
+t1\_path & VARCHAR(500) & NOT NULL & Path to T1 modality \\
+t1ce\_path & VARCHAR(500) & NOT NULL & Path to T1ce modality \\
+t2\_path & VARCHAR(500) & NOT NULL & Path to T2 modality \\
+flair\_path & VARCHAR(500) & NOT NULL & Path to FLAIR modality \\
+status & VARCHAR(20) & DEFAULT 'uploaded' & Processing status \\
+created\_at & TIMESTAMP & DEFAULT NOW() & Upload timestamp \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Segmentation Result Table}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} & \textbf{Description} \\
+\hline
+seg\_id & UUID & PRIMARY KEY & Unique segmentation ID \\
+scan\_id & UUID & FOREIGN KEY & Reference to MRI scan \\
+model\_version & VARCHAR(50) & NOT NULL & Model version used \\
+mask\_path & VARCHAR(500) & NOT NULL & Path to segmentation mask \\
+wt\_volume & FLOAT & CHECK (>= 0) & Whole tumor volume (cm³) \\
+tc\_volume & FLOAT & CHECK (>= 0) & Tumor core volume (cm³) \\
+et\_volume & FLOAT & CHECK (>= 0) & Enhancing tumor volume (cm³) \\
+dice\_wt & FLOAT & CHECK (0 <= dice\_wt <= 1) & Dice score for WT \\
+dice\_tc & FLOAT & CHECK (0 <= dice\_tc <= 1) & Dice score for TC \\
+dice\_et & FLOAT & CHECK (0 <= dice\_et <= 1) & Dice score for ET \\
+inference\_time & FLOAT & & Time taken (seconds) \\
+created\_at & TIMESTAMP & DEFAULT NOW() & Inference timestamp \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Atlas Mapping Table}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} & \textbf{Description} \\
+\hline
+mapping\_id & UUID & PRIMARY KEY & Unique mapping ID \\
+seg\_id & UUID & FOREIGN KEY & Reference to segmentation \\
+atlas\_type & VARCHAR(50) & NOT NULL & Atlas used (e.g., Harvard-Oxford) \\
+affected\_regions & JSONB & NOT NULL & Array of affected brain regions \\
+alignment\_quality & FLOAT & CHECK (0 <= value <= 1) & Registration quality score \\
+created\_at & TIMESTAMP & DEFAULT NOW() & Mapping timestamp \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Clinical Report Table}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} & \textbf{Description} \\
+\hline
+report\_id & UUID & PRIMARY KEY & Unique report ID \\
+seg\_id & UUID & FOREIGN KEY & Reference to segmentation \\
+json\_descriptor & JSONB & NOT NULL & Structured JSON descriptor \\
+report\_text & TEXT & NOT NULL & Generated clinical report \\
+llm\_model\_version & VARCHAR(50) & NOT NULL & LLM version used \\
+confidence\_score & FLOAT & CHECK (0 <= value <= 1) & Report confidence \\
+reviewed & BOOLEAN & DEFAULT FALSE & Clinician review status \\
+reviewer\_feedback & TEXT & & Clinician comments \\
+created\_at & TIMESTAMP & DEFAULT NOW() & Generation timestamp \\
+reviewed\_at & TIMESTAMP & & Review timestamp \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{User Table}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{Field} & \textbf{Type} & \textbf{Constraints} & \textbf{Description} \\
+\hline
+user\_id & UUID & PRIMARY KEY & Unique user ID \\
+username & VARCHAR(100) & UNIQUE, NOT NULL & Login username \\
+email & VARCHAR(255) & UNIQUE, NOT NULL & User email \\
+password\_hash & VARCHAR(255) & NOT NULL & Hashed password \\
+role & VARCHAR(20) & NOT NULL & User role (admin/radiologist/researcher) \\
+is\_active & BOOLEAN & DEFAULT TRUE & Account status \\
+last\_login & TIMESTAMP & & Last login time \\
+created\_at & TIMESTAMP & DEFAULT NOW() & Account creation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Data Flow Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/data_flow_diagram.png}
+\caption{Level 0 Data Flow Diagram}
+\label{fig:dfd0}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/data\_flow\_diagram.puml}
+
+\subsection{JSON Schema Design}
+
+The system uses a structured JSON schema for anatomical descriptors:
+
+\begin{lstlisting}[language=json]
+{
+  "case_id": "string",
+  "patient_metadata": {
+    "age": "integer",
+    "sex": "string ('M'/'F'/'O')"
+  },
+  "segmentation_analysis": {
+    "whole_tumor": {
+      "volume_cm3": "float",
+      "voxel_count": "integer"
+    },
+    "tumor_core": { ... },
+    "enhancing_tumor": { ... }
+  },
+  "anatomical_localization": {
+    "affected_regions": [
+      {
+        "region_name": "string",
+        "hemisphere": "string",
+        "involvement_percentage": "float",
+        "volume_cm3": "float"
+      }
+    ]
+  },
+  "tumor_characteristics": {
+    "enhancing_component": "boolean",
+    "necrotic_component": "boolean",
+    "edema_present": "boolean"
+  },
+  "model_metadata": {
+    "model_version": "string",
+    "dice_scores": { ... },
+    "inference_timestamp": "ISO8601"
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+% 4. Component Design
+\section{Component Design}
+
+\subsection{Preprocessing Module}
+
+\subsubsection{Purpose}
+Standardize and prepare multi-modal MRI data for model inference.
+
+\subsubsection{Class Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/preprocessing_class.png}
+\caption{Preprocessing Module Class Diagram}
+\label{fig:preprocess_class}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/preprocessing\_class.puml}
+
+\subsubsection{Key Algorithms}
+
+\paragraph{Intensity Normalization}
+\begin{equation}
+I_{norm} = \frac{I - \mu}{\sigma}
+\end{equation}
+where $I$ is the input intensity, $\mu$ is the mean, and $\sigma$ is the standard deviation.
+
+\paragraph{Spatial Resampling}
+Data is resampled to isotropic resolution (1mm³) using trilinear interpolation:
+\begin{equation}
+V_{resampled}(x,y,z) = \sum_{i,j,k} V_{original}(i,j,k) \cdot w(x-i) \cdot w(y-j) \cdot w(z-k)
+\end{equation}
+
+\subsection{MoME+ Segmentation Module}
+
+\subsubsection{Architecture}
+
+The MoME+ model consists of:
+\begin{itemize}
+    \item 4 modality-specific expert networks (3D U-Nets)
+    \item Hierarchical gating network with attention
+    \item Multi-scale feature fusion
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/mome_architecture.png}
+\caption{MoME+ Architecture Diagram}
+\label{fig:mome_arch}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/mome\_architecture.puml}
+
+\subsubsection{Mathematical Formulation}
+
+\paragraph{Expert Network Output}
+For each modality $m \in \{T1, T1ce, T2, FLAIR\}$:
+\begin{equation}
+F_m = Expert_m(X_m, \theta_m)
+\end{equation}
+where $X_m$ is the input modality and $\theta_m$ are expert-specific parameters.
+
+\paragraph{Gating Mechanism}
+\begin{equation}
+G = \sigma(Conv_{gate}([F_{T1}, F_{T1ce}, F_{T2}, F_{FLAIR}]))
+\end{equation}
+
+\paragraph{Feature Fusion}
+\begin{equation}
+F_{fused} = \sum_{m=1}^{4} G_m \odot F_m
+\end{equation}
+
+\paragraph{Final Prediction}
+\begin{equation}
+P = Decoder(F_{fused})
+\end{equation}
+where $P \in \mathbb{R}^{H \times W \times D \times 4}$ for {background, WT, TC, ET}.
+
+\subsection{Continual Learning Module}
+
+\subsubsection{Elastic Weight Consolidation (EWC)}
+
+The EWC loss function:
+\begin{equation}
+\mathcal{L}_{EWC} = \mathcal{L}_{task}(\theta) + \frac{\lambda}{2} \sum_i F_i(\theta_i - \theta^*_i)^2
+\end{equation}
+where:
+\begin{itemize}
+    \item $\mathcal{L}_{task}$ is the task-specific loss
+    \item $F_i$ is the Fisher information matrix
+    \item $\theta^*_i$ are the optimal parameters from the previous task
+    \item $\lambda$ is the importance weight
+\end{itemize}
+
+\subsubsection{Fisher Information Computation}
+\begin{equation}
+F_i = \mathbb{E}_{x \sim D}\left[\left(\frac{\partial \log p(y|x,\theta)}{\partial \theta_i}\right)^2\right]
+\end{equation}
+
+\subsection{Atlas Mapping Module}
+
+\subsubsection{Sequence Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/atlas_mapping_sequence.png}
+\caption{Atlas Mapping Process Sequence Diagram}
+\label{fig:atlas_seq}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/atlas\_mapping\_sequence.puml}
+
+\subsubsection{Registration Algorithm}
+
+\paragraph{Affine Registration}
+Optimize the transformation matrix $T$:
+\begin{equation}
+T^* = \arg\min_T \sum_{i} || I_{fixed}(T(x_i)) - I_{moving}(x_i) ||^2
+\end{equation}
+
+\paragraph{Overlap Calculation}
+For each brain region $R$:
+\begin{equation}
+Overlap(R) = \frac{|Mask \cap R|}{|R|} \times 100\%
+\end{equation}
+
+\subsection{LLM Report Generation Module}
+
+\subsubsection{Activity Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{diagrams/report_generation_activity.png}
+\caption{Report Generation Activity Diagram}
+\label{fig:report_activity}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/report\_generation\_activity.puml}
+
+\subsubsection{LoRA Fine-tuning}
+
+The LoRA approach modifies the weight update:
+\begin{equation}
+W' = W_0 + \Delta W = W_0 + BA
+\end{equation}
+where:
+\begin{itemize}
+    \item $W_0 \in \mathbb{R}^{d \times k}$ is the frozen pre-trained weight
+    \item $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ are trainable low-rank matrices
+    \item $r \ll \min(d,k)$ is the rank
+\end{itemize}
+
+\paragraph{Parameter Efficiency}
+Number of trainable parameters:
+\begin{equation}
+N_{trainable} = r \cdot (d + k) \ll d \cdot k = N_{original}
+\end{equation}
+
+\subsection{API Module}
+
+\subsubsection{State Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/scan_state_diagram.png}
+\caption{MRI Scan Processing State Diagram}
+\label{fig:state}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/scan\_state\_diagram.puml}
+
+\newpage
+
+% 5. Interface Design
+\section{Interface Design}
+
+\subsection{API Interface Specifications}
+
+\subsubsection{RESTful API Endpoints}
+
+\begin{longtable}{|p{3cm}|p{2cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{Endpoint} & \textbf{Method} & \textbf{Request} & \textbf{Response} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Endpoint} & \textbf{Method} & \textbf{Request} & \textbf{Response} \\
+\hline
+\endhead
+
+/api/auth/login & POST & \{username, password\} & \{token, user\_info\} \\
+\hline
+/api/auth/logout & POST & Authorization header & \{success\} \\
+\hline
+/api/scans/ & GET & Query params (pagination) & \{scans: [...], count\} \\
+\hline
+/api/scans/ & POST & FormData with MRI files & \{scan\_id, status\} \\
+\hline
+/api/scans/\{id\}/ & GET & scan\_id & \{scan\_details\} \\
+\hline
+/api/predict/ & POST & \{scan\_id\} & \{job\_id, status\} \\
+\hline
+/api/predict/\{id\}/ & GET & job\_id & \{status, result, progress\} \\
+\hline
+/api/reports/\{id\}/ & GET & report\_id & \{report\_text, json\_descriptor\} \\
+\hline
+/api/reports/\{id\}/review & POST & \{feedback, approved\} & \{success\} \\
+\hline
+/api/visualize/\{id\}/ & GET & seg\_id & \{3d\_model\_url\} \\
+\hline
+/api/export/\{id\}/pdf & GET & report\_id & PDF file download \\
+\hline
+\end{longtable}
+
+\subsubsection{API Sequence Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/api_sequence.png}
+\caption{API Request-Response Sequence}
+\label{fig:api_seq}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/api\_sequence.puml}
+
+\subsection{User Interface Design}
+
+\subsubsection{Dashboard Layout}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/ui_dashboard.png}
+\caption{Dashboard Interface Wireframe}
+\label{fig:ui_dashboard}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/ui\_dashboard.puml}
+
+\subsubsection{Upload Interface}
+
+Key features:
+\begin{itemize}
+    \item Drag-and-drop file upload
+    \item Multi-file selection for 4 modalities (T1, T1ce, T2, FLAIR)
+    \item File validation (NIfTI format, size limits)
+    \item Progress indicator
+    \item Patient metadata form
+\end{itemize}
+
+\subsubsection{Results Visualization Interface}
+
+Components:
+\begin{itemize}
+    \item 3D interactive viewer (Three.js/VTK.js)
+    \item Multi-planar reconstruction (MPR) views
+    \item Segmentation overlay toggle
+    \item Volume measurements display
+    \item Atlas mapping visualization
+    \item Report text panel
+\end{itemize}
+
+\subsection{External Interface Requirements}
+
+\subsubsection{Hardware Interfaces}
+\begin{itemize}
+    \item \textbf{GPU:} CUDA-compatible GPU (minimum 8GB VRAM) for inference
+    \item \textbf{Storage:} Network-attached storage (NAS) or cloud storage (S3/MinIO) for MRI data
+\end{itemize}
+
+\subsubsection{Software Interfaces}
+\begin{itemize}
+    \item \textbf{PACS Integration:} DICOM receiver for automated MRI import
+    \item \textbf{HIS/RIS:} HL7 FHIR API for patient demographics
+    \item \textbf{Cloud Services:} AWS/GCP for scalable deployment
+\end{itemize}
+
+\subsubsection{Communication Interfaces}
+\begin{itemize}
+    \item \textbf{Protocol:} HTTPS (TLS 1.3)
+    \item \textbf{Data Format:} JSON for API, NIfTI for medical images
+    \item \textbf{WebSocket:} Real-time progress updates during inference
+\end{itemize}
+
+\newpage
+
+% 6. Security Design
+\section{Security Design}
+
+\subsection{Authentication and Authorization}
+
+\subsubsection{Authentication Flow}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/auth_flow.png}
+\caption{Authentication Flow Diagram}
+\label{fig:auth_flow}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/auth\_flow.puml}
+
+\subsubsection{JWT Token Structure}
+\begin{lstlisting}[language=json]
+{
+  "header": {
+    "alg": "RS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "user_id": "uuid",
+    "username": "string",
+    "role": "admin|radiologist|researcher",
+    "exp": "timestamp",
+    "iat": "timestamp"
+  },
+  "signature": "..."
+}
+\end{lstlisting}
+
+\subsection{Role-Based Access Control (RBAC)}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|X|X|}
+\hline
+\textbf{Resource} & \textbf{Admin} & \textbf{Radiologist} & \textbf{Researcher} \\
+\hline
+Upload Scans & ✓ & ✓ & ✗ \\
+\hline
+View Scans & ✓ & ✓ (own only) & ✓ (anonymized) \\
+\hline
+Run Inference & ✓ & ✓ & ✓ \\
+\hline
+Review Reports & ✓ & ✓ & ✗ \\
+\hline
+Export Data & ✓ & ✓ & ✓ (anonymized) \\
+\hline
+Manage Users & ✓ & ✗ & ✗ \\
+\hline
+Fine-tune Models & ✓ & ✗ & ✓ \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Data Security}
+
+\subsubsection{Encryption}
+\begin{itemize}
+    \item \textbf{At Rest:} AES-256 encryption for stored MRI files
+    \item \textbf{In Transit:} TLS 1.3 for all API communications
+    \item \textbf{Database:} Transparent Data Encryption (TDE) for PostgreSQL
+\end{itemize}
+
+\subsubsection{Data Anonymization}
+\begin{equation}
+PatientCode = HMAC-SHA256(PatientID, SecretKey)
+\end{equation}
+
+All personally identifiable information (PII) is removed before research access.
+
+\subsection{HIPAA Compliance}
+
+Key measures:
+\begin{itemize}
+    \item Audit logging for all data access
+    \item Automatic session timeout (30 minutes)
+    \item Password complexity requirements
+    \item Multi-factor authentication (optional)
+    \item Data retention policies
+    \item Secure backup and disaster recovery
+\end{itemize}
+
+\newpage
+
+% 7. Deployment Design
+\section{Deployment Design}
+
+\subsection{Deployment Architecture}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/deployment_diagram.png}
+\caption{Deployment Architecture Diagram}
+\label{fig:deployment}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/deployment\_diagram.puml}
+
+\subsection{Container Architecture}
+
+\subsubsection{Docker Services}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|X|l|}
+\hline
+\textbf{Service} & \textbf{Image} & \textbf{Purpose} & \textbf{Ports} \\
+\hline
+nginx & nginx:alpine & Reverse proxy, static files & 80, 443 \\
+\hline
+backend & django:custom & API server & 8000 \\
+\hline
+celery-worker & django:custom & Async tasks (inference) & - \\
+\hline
+celery-beat & django:custom & Scheduled tasks & - \\
+\hline
+redis & redis:7-alpine & Message broker, cache & 6379 \\
+\hline
+postgres & postgres:14 & Database & 5432 \\
+\hline
+minio & minio/minio & Object storage & 9000, 9001 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Scalability Design}
+
+\subsubsection{Horizontal Scaling}
+\begin{itemize}
+    \item \textbf{API Server:} Load-balanced multiple instances
+    \item \textbf{Celery Workers:} Auto-scaling based on queue length
+    \item \textbf{Database:} Read replicas for query load distribution
+\end{itemize}
+
+\subsubsection{Vertical Scaling}
+\begin{itemize}
+    \item \textbf{GPU Workers:} Dedicated high-memory instances for model inference
+    \item \textbf{Database:} SSD storage with sufficient IOPS
+\end{itemize}
+
+\subsection{Performance Requirements}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Metric} & \textbf{Description} & \textbf{Target} \\
+\hline
+API Response Time & Time for API endpoints to respond & < 200ms \\
+\hline
+Segmentation Time & Time to segment single case & < 30s \\
+\hline
+Report Generation Time & Time to generate clinical report & < 10s \\
+\hline
+Concurrent Users & Number of simultaneous users & 50+ \\
+\hline
+Throughput & Cases processed per hour & 100+ \\
+\hline
+Availability & System uptime & 99.5\% \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Backup and Recovery}
+
+\subsubsection{Backup Strategy}
+\begin{itemize}
+    \item \textbf{Database:} Automated daily backups with 30-day retention
+    \item \textbf{MRI Files:} Replicated to secondary storage (S3 Glacier)
+    \item \textbf{Model Checkpoints:} Version-controlled with DVC (Data Version Control)
+\end{itemize}
+
+\subsubsection{Disaster Recovery}
+\begin{itemize}
+    \item \textbf{RTO (Recovery Time Objective):} 4 hours
+    \item \textbf{RPO (Recovery Point Objective):} 24 hours
+    \item \textbf{Failover:} Multi-region deployment for critical components
+\end{itemize}
+
+\newpage
+
+% 8. Use Case Diagrams
+\section{Use Case Specifications}
+
+\subsection{Use Case Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/use_case_diagram.png}
+\caption{System Use Case Diagram}
+\label{fig:usecase}
+\end{figure}
+
+\textit{Note: Generate diagram using PlantUML code provided in diagrams/use\_case\_diagram.puml}
+
+\subsection{Use Case: Upload MRI Scan}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{ID} & UC-001 \\
+\hline
+\textbf{Name} & Upload MRI Scan \\
+\hline
+\textbf{Actor} & Radiologist \\
+\hline
+\textbf{Precondition} & User is authenticated \\
+\hline
+\textbf{Postcondition} & MRI scan is stored and ready for processing \\
+\hline
+\textbf{Main Flow} & 
+1. User navigates to upload page \newline
+2. User selects 4 MRI modality files (T1, T1ce, T2, FLAIR) \newline
+3. User enters patient metadata (age, sex, scan date) \newline
+4. System validates file formats and sizes \newline
+5. System uploads files to object storage \newline
+6. System creates scan record in database \newline
+7. System displays success message \\
+\hline
+\textbf{Alternative Flow} & 
+4a. File validation fails \newline
+\quad 4a1. System displays error message \newline
+\quad 4a2. User corrects the issue \newline
+\quad 4a3. Return to step 2 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Use Case: Run Segmentation Analysis}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{ID} & UC-002 \\
+\hline
+\textbf{Name} & Run Segmentation Analysis \\
+\hline
+\textbf{Actor} & Radiologist, Researcher \\
+\hline
+\textbf{Precondition} & MRI scan is uploaded \\
+\hline
+\textbf{Postcondition} & Segmentation result is available \\
+\hline
+\textbf{Main Flow} & 
+1. User selects an uploaded scan \newline
+2. User clicks "Run Analysis" button \newline
+3. System creates asynchronous job \newline
+4. System preprocesses MRI data \newline
+5. System runs MoME+ inference \newline
+6. System performs atlas mapping \newline
+7. System generates JSON descriptor \newline
+8. System stores segmentation result \newline
+9. System notifies user of completion \\
+\hline
+\textbf{Alternative Flow} & 
+5a. Inference fails due to GPU error \newline
+\quad 5a1. System retries on different worker \newline
+\quad 5a2. If retry fails, notify user \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Use Case: Generate Clinical Report}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{ID} & UC-003 \\
+\hline
+\textbf{Name} & Generate Clinical Report \\
+\hline
+\textbf{Actor} & Radiologist \\
+\hline
+\textbf{Precondition} & Segmentation analysis is complete \\
+\hline
+\textbf{Postcondition} & Clinical report is generated and displayed \\
+\hline
+\textbf{Main Flow} & 
+1. User views segmentation result \newline
+2. User clicks "Generate Report" button \newline
+3. System retrieves JSON descriptor \newline
+4. System sends descriptor to LLM model \newline
+5. LLM generates clinical report text \newline
+6. System performs consistency validation \newline
+7. System stores report in database \newline
+8. System displays report to user \\
+\hline
+\textbf{Alternative Flow} & 
+6a. Consistency validation fails \newline
+\quad 6a1. System flags report for manual review \newline
+\quad 6a2. System displays warning to user \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Use Case: Review and Approve Report}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{ID} & UC-004 \\
+\hline
+\textbf{Name} & Review and Approve Report \\
+\hline
+\textbf{Actor} & Radiologist \\
+\hline
+\textbf{Precondition} & Clinical report is generated \\
+\hline
+\textbf{Postcondition} & Report is marked as reviewed with feedback \\
+\hline
+\textbf{Main Flow} & 
+1. User reads generated clinical report \newline
+2. User reviews segmentation visualization \newline
+3. User provides feedback (comments, corrections) \newline
+4. User marks report as approved or rejected \newline
+5. System updates report status \newline
+6. System stores feedback for continual learning \\
+\hline
+\end{tabularx}
+\end{table}
+
+\newpage
+
+% 9. Appendices
+\section{Appendices}
+
+\subsection{Appendix A: PlantUML Diagram Codes}
+
+All PlantUML codes are provided in the \texttt{diagrams/} directory with the following files:
+
+\begin{itemize}
+    \item \texttt{system\_architecture.puml} - System architecture diagram
+    \item \texttt{component\_diagram.puml} - Component relationships
+    \item \texttt{erd\_diagram.puml} - Entity-relationship diagram
+    \item \texttt{data\_flow\_diagram.puml} - Data flow visualization
+    \item \texttt{preprocessing\_class.puml} - Preprocessing classes
+    \item \texttt{mome\_architecture.puml} - MoME+ model architecture
+    \item \texttt{atlas\_mapping\_sequence.puml} - Atlas mapping sequence
+    \item \texttt{report\_generation\_activity.puml} - Report generation workflow
+    \item \texttt{scan\_state\_diagram.puml} - Scan processing states
+    \item \texttt{api\_sequence.puml} - API interaction sequence
+    \item \texttt{ui\_dashboard.puml} - Dashboard wireframe
+    \item \texttt{auth\_flow.puml} - Authentication flow
+    \item \texttt{deployment\_diagram.puml} - Deployment architecture
+    \item \texttt{use\_case\_diagram.puml} - System use cases
+\end{itemize}
+
+\subsection{Appendix B: Model Performance Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Task} & \textbf{Dice (WT)} & \textbf{Dice (TC)} & \textbf{Dice (ET)} \\
+\hline
+BraTS 2021 & Glioma Segmentation & 0.912 & 0.867 & 0.823 \\
+\hline
+OASIS & Alzheimer's Detection & 0.895 & 0.851 & - \\
+\hline
+ISLES & Stroke Lesion & 0.878 & - & - \\
+\hline
+\end{tabularx}
+\caption{Expected Model Performance (Baseline)}
+\end{table}
+
+\subsection{Appendix C: Hardware Requirements}
+
+\subsubsection{Development Environment}
+\begin{itemize}
+    \item \textbf{CPU:} Intel i7/AMD Ryzen 7 or better
+    \item \textbf{RAM:} 32GB minimum, 64GB recommended
+    \item \textbf{GPU:} NVIDIA RTX 3080 (10GB) or better
+    \item \textbf{Storage:} 500GB SSD for code, 2TB HDD for datasets
+\end{itemize}
+
+\subsubsection{Production Environment}
+\begin{itemize}
+    \item \textbf{Inference Server:} NVIDIA A100 (40GB) or V100 (32GB)
+    \item \textbf{API Server:} 8-core CPU, 16GB RAM
+    \item \textbf{Database Server:} 4-core CPU, 16GB RAM, SSD storage
+    \item \textbf{Storage:} 10TB+ for MRI archive, scalable object storage
+\end{itemize}
+
+\subsection{Appendix D: Third-Party Libraries}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Library} & \textbf{Version} & \textbf{License} \\
+\hline
+PyTorch & 2.0+ & BSD-3-Clause \\
+\hline
+MONAI & 1.3+ & Apache 2.0 \\
+\hline
+Django & 4.2+ & BSD \\
+\hline
+Django REST Framework & 3.14+ & BSD \\
+\hline
+Celery & 5.3+ & BSD \\
+\hline
+nibabel & 5.1+ & MIT \\
+\hline
+nilearn & 0.10+ & BSD \\
+\hline
+transformers & 4.30+ & Apache 2.0 \\
+\hline
+React & 18+ & MIT \\
+\hline
+Three.js & 0.150+ & MIT \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Appendix E: Glossary of Medical Terms}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Term} & \textbf{Definition} \\
+\hline
+Glioma & A type of tumor that occurs in the brain and spinal cord \\
+\hline
+MRI & Magnetic Resonance Imaging - non-invasive imaging technique \\
+\hline
+FLAIR & Fluid-Attenuated Inversion Recovery MRI sequence useful for detecting lesions \\
+\hline
+Segmentation & Process of partitioning an image into meaningful regions \\
+\hline
+Necrosis & Death of tissue due to disease or injury \\
+\hline
+Edema & Swelling caused by excess fluid trapped in body tissues \\
+\hline
+Enhancing & Areas that show increased signal after contrast agent administration \\
+\hline
+Atlas & Standardized 3D brain model used for spatial normalization \\
+\hline
+Voxel & 3D pixel (volume element) in medical imaging \\
+\hline
+\end{tabularx}
+\end{table}
+
+\end{document}

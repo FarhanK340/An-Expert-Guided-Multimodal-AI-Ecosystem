@@ -1,0 +1,274 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{
+From Segmentation to Structured Reports:\\
+Auditable Continual Learning for Medical Imaging Automation
+}
+
+\author{
+\IEEEauthorblockN{Farhan Kashif, Ahmed Sultan, Muhammad Moazam Fraz, Muhammad Naseer Bajwa}
+\IEEEauthorblockA{\textit{School of Electrical Engineering and Computer Science} \\
+\textit{National University of Sciences and Technology (NUST)}\\
+Islamabad, Pakistan \\
+Email: \{fkashif.bese22seecs, asultan.bese22seecs, moazam.fraz, naseer.bajwa\}@seecs.edu.pk}
+}
+
+\begin{document}
+
+\maketitle
+
+\section{abstract}
+Autonomous medical systems such as surgical robots, AI-guided treatment planners, and telemedicine platforms require diagnostic modules that are \textit{adaptive}, \textit{interpretable}, and \textit{structured}. We present a modular, continually learning perception-to-report pipeline for automated brain tumor diagnosis, designed for integration into clinical robotic ecosystems. The framework addresses three core requirements. \textbf{(1) Adaptation:} A two-stage Mixture-of-Modality-Experts (MoME+) strategy first trains four modality-specific 3D U-Net experts independently, then trains a hierarchical gating and fusion network over frozen experts. This enables selective knowledge updates without catastrophic forgetting, further supported by Elastic Weight Consolidation (EWC) and experience replay for continual learning. \textbf{(2) Auditability:} A deterministic registration pipeline maps segmentation outputs to the Harvard-Oxford brain atlas, producing certifiable anatomical descriptors with explicit spatial provenance. \textbf{(3) Structured Human-Machine Interface:} A JSON-mediated intermediate representation encodes anatomical findings with full traceability, supporting both automated downstream processing and operator-level verification, which is a key safety requirement for robotic-assisted diagnostics. Expert training on BraTS 2024 (GLI, 1,620 cases) yields per-expert Dice scores of 0.7889 (T1CE), 0.7438 (T2), 0.7206 (T1), and 0.6991 (FLAIR), with the gating fusion network achieving a mean Dice of 0.8150. Report generation achieves BLEU-4: 44.73, ROUGE-L: 0.653, and METEOR: 0.397 with zero hallucination. This work provides a practical architecture for certifiable diagnostic intelligence in medical robotic systems.
+
+\begin{IEEEkeywords}
+Medical robotics automation, clinical decision support, multimodal segmentation, mixture of experts, continual learning, auditable AI, structured reporting, brain tumor segmentation, perception-to-report pipeline.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+AI integration into medical robotic systems, including surgical navigation, AI-guided treatment planning, autonomous telemedicine, and clinical decision support, demands diagnostic perception modules that go beyond raw segmentation performance. Such systems must operate continuously under evolving clinical protocols, produce interpretable and certifiable outputs, and interface with downstream automation components through structured, machine-readable representations. These requirements are fundamentally architectural, not merely a matter of model accuracy.
+
+Brain tumor segmentation on multi-modal MRI is a prototypical high-stakes perception problem in clinical automation. Different MRI sequences (T1, T1ce, T2, FLAIR) reveal complementary tissue characteristics: contrast-enhanced T1 highlights enhancing tumor boundaries, FLAIR captures peritumoral edema, and T2 reveals the broader tumor extent. Deep learning has achieved strong performance on this task. Early 3D U-Net variants \cite{ronneberger2015unet} achieved $\sim$89\% Dice on whole tumor detection. The self-configuring nnU-Net \cite{isensee2021nnu} improved this to 91.5\% via automated hyperparameter search. Transformer-based architectures (UNETR \cite{hatamizadeh2022unetr}, Swin UNETR \cite{hatamizadeh2022swin}) reach 92.6\% Dice through global self-attention. BraTS 2024 \cite{brats2024} top solutions use hybrid models such as MedNeXt \cite{roy2024mednext}, U-Mamba \cite{ma2024umamba}, and Swin-UNet \cite{cao2024swinunet}, combining convolutional and attention mechanisms. The Mixture-of-Modality-Experts (MoME) architecture \cite{zhang2024mome} demonstrated that assigning specialized encoders to each modality and fusing them via a learned hierarchical gating network yields 93.4\% Dice, outperforming concatenation-based approaches while providing natural modularity.
+
+Despite these advances, deploying such models in clinical robotic workflows exposes three unresolved challenges:
+
+\textbf{Adaptation and Continuous Deployment:} Static models deteriorate under distribution shift caused by scanner upgrades, protocol changes, or new pathology types. Medical robotic systems require perception modules that can update knowledge on new tasks without erasing prior capabilities, a requirement absent in conventional single-training-run approaches.
+
+\textbf{Interpretability and Regulatory Auditability:} Autonomous clinical systems are subject to regulatory scrutiny. Pixel-level segmentation masks are insufficient for certification; regulatory frameworks demand explicit anatomical localization, traceable reasoning chains, and reproducible outputs. Every automated decision must be attributable to verifiable evidence.
+
+\textbf{Structured Machine Interface for Downstream Automation:} Robotic systems and clinical automation pipelines consume structured data, not free-text or visual overlays. A machine-readable intermediate representation between perception and language generation is essential for safe, verifiable human-machine collaboration.
+
+We address all three requirements in a unified, modular framework. Our specific contributions are:
+
+\begin{enumerate}
+    \item \textbf{Two-Stage Expert Training Pipeline:} We implement MoME+ with a two-stage protocol: (i) modality-specific expert pre-training, and (ii) hierarchical gating fusion network training. This enables modular knowledge compartmentalization and selective continual updates without full retraining.
+    \item \textbf{EWC + Replay Continual Learning:} We extend MoME+ with Elastic Weight Consolidation and experience replay for sequential task adaptation, validated on a Glioma-to-Meningioma task transition without catastrophic forgetting.
+    \item \textbf{Deterministic Anatomical Grounding:} A registration pipeline to the Harvard-Oxford atlas provides certifiable, reproducible anatomical localization, which is a prerequisite for regulatory compliance in autonomous clinical systems.
+    \item \textbf{JSON-Mediated Structured Reporting:} A deterministic template engine converts atlas-grounded segmentation facts into clinical radiology reports with complete fact provenance and zero hallucination risk, making it suitable for integration with downstream robotic planning systems.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Multimodal Brain Tumor Segmentation}
+The U-Net architecture \cite{ronneberger2015unet} and its 3D volumetric variants remain the standard backbone for medical image segmentation. The self-adapting nnU-Net \cite{isensee2021nnu} showed that systematic hyperparameter configuration significantly outperforms manual tuning across diverse datasets. Transformer-based architectures (UNETR \cite{hatamizadeh2022unetr}, Swin UNETR \cite{hatamizadeh2022swin}) introduced global self-attention into volumetric segmentation, with BraTS 2024 validating hybrid models (MedNeXt \cite{roy2024mednext}, U-Mamba \cite{ma2024umamba}) as the current state-of-the-art.
+
+Most multimodal approaches fuse all MRI sequences by concatenation at the input level, treating all modalities symmetrically. This ignores the well-known complementarity of MRI sequences in clinical practice. MoME \cite{zhang2024mome} addressed this by assigning per-modality encoder-decoder experts and combining their hierarchical feature outputs via a spatial gating network. This modularity is particularly valuable for robotics, as individual expert modules can be updated independently when new data becomes available for a specific modality, without disturbing the rest of the model.
+
+\subsection{Continual Learning for Autonomous Medical Systems}
+Continual learning is a key enabler for robotic systems operating over extended deployment lifetimes. In medical imaging, models must adapt to scanner drift, protocol updates, and new pathologies without access to historical training data due to storage and privacy constraints. Elastic Weight Consolidation (EWC) \cite{kirkpatrick2017ewc} regularizes parameter updates based on Fisher Information, protecting knowledge from prior tasks. Experience Replay \cite{rebuffi2017icarl} complements this by storing a small representative buffer of past examples. Hybrid approaches combining both strategies are recommended by recent surveys \cite{yuan2024continualmed} due to high domain shift between medical datasets. CLFCR-MC \cite{wang2024clfcr} further demonstrates contrastive regularization for knowledge retention.
+
+Our hybrid EWC + Replay strategy leverages the MoME+ modular structure for \textit{selective expert adaptation}: when a new pathology is introduced for a single modality protocol, only the relevant expert is fine-tuned while others remain frozen, which substantially reduces forgetting risk.
+
+\subsection{Automated Report Generation and Structured Output}
+Early radiology report generation relied on template-based systems that offered consistency but limited clinical flexibility. Deep learning shifted this to encoder-decoder architectures \cite{chen2020r2gen} with LSTMs and Transformers decoding visual features into text. Medical foundation models (Med-Gemini \cite{saab2024medgemini}, ClinicalBLIP \cite{bobu2024clinicalblip}) have shown expert-level medical VQA performance. However, end-to-end image-to-text generation risks hallucination, producing clinically plausible but factually incorrect statements \cite{singhal2023medpalm}, which is unacceptable in autonomous medical systems.
+
+Grounded generation approaches address this through structured intermediate representations. RadGraph \cite{jain2021radgraph} extracts clinical entities as a structured graph before text generation. Our approach extends this paradigm: we \textit{deterministically} derive all anatomical facts from segmentation and atlas mapping into a JSON schema, then condition report generation entirely on this verified representation. This ensures every generated statement is directly traceable to segmentation evidence, a property essential for robotic system certification.
+
+\section{Methodology}
+
+Our pipeline consists of three modules operating in sequence: (1) a modular segmentation system, (2) a deterministic anatomical mapping engine, and (3) a structured JSON-to-report generation layer. Figure~\ref{fig:methodology} illustrates the complete architecture.
+
+\begin{figure*}[htbp]
+\centerline{\includegraphics[width=\textwidth]{methodology_diagram.png}}
+\caption{The perception-to-report pipeline for clinical robotics integration. Multi-modal MRI inputs are processed by four independently trained modality-specific 3D U-Net experts. A hierarchical gating network fuses expert outputs into a unified segmentation. The deterministic atlas registration module maps lesion voxels to the Harvard-Oxford brain atlas. These anatomical facts are encoded into a validated JSON schema, which drives a template-based report generation engine. The EWC + Replay continual learning loop enables adaptive updating of individual experts as new clinical tasks are encountered, ensuring long-term autonomous operation without catastrophic forgetting.}
+\label{fig:methodology}
+\end{figure*}
+
+\subsection{Modular Segmentation: Two-Stage MoME+ Training}
+
+\subsubsection{Expert Architecture}
+The segmentation backbone consists of four modality-specific expert networks: $E_{T1}$, $E_{T1ce}$, $E_{T2}$, $E_{FLAIR}$. Each expert is an independent 3D U-Net with CBAM (Convolutional Block Attention Module) attention in the encoder and squeeze-and-excitation (SE) blocks in skip connections, allowing each expert to focus on features most relevant to its MRI contrast. All experts share the same architecture but are trained entirely independently with no shared weights.
+
+\subsubsection{Stage 1: Independent Expert Pre-Training}
+Each expert $E_i$ is trained independently on single-modality crops from the BraTS 2024 GLI training set using combined soft Dice and cross-entropy loss with deep supervision at the decoder bottleneck. This ensures each expert develops modality-specific representations without interference from other modalities. Hardware: NVIDIA RTX 3080 10GB, crop size $64^3$, batch size 8 per expert. All four experts converged successfully; results are reported in Section~\ref{sec:results}.
+
+\subsubsection{Stage 2: Gating Network Training}
+After expert pre-training, all expert weights are frozen. A hierarchical gating network $G$ is trained to optimally combine the four expert outputs for any given multi-modal input. It produces normalized scalar weights $\{w_i\}_{i=1}^{4}$ via an attention mechanism:
+\begin{equation}
+\hat{Y} = \sum_{i=1}^{4} w_i \cdot E_i(X_i), \quad \sum_{i=1}^{4} w_i = 1
+\end{equation}
+The gating network operates on expert logits rather than raw modality images, keeping the fusion stage independent of any single modality's internal representation. Training uses batch size 4, learning rate $10^{-4}$, AdamW optimizer with weight decay $10^{-4}$, and mixed precision (AMP) on the same RTX 3080 10GB hardware.
+
+\subsubsection{Continual Learning Extension}
+To support long-term autonomous deployment, a key requirement for clinical robotic systems, we augment MoME+ with:
+
+\textbf{Elastic Weight Consolidation (EWC):} At the end of each task, the Fisher Information Matrix $F$ is computed over the expert parameters. For a new task $t+1$, an EWC regularization term is added to the loss:
+\begin{equation}
+\mathcal{L}_{EWC}(\theta) = \mathcal{L}_{task}(\theta) + \frac{\lambda}{2} \sum_{i} F_i (\theta_i - \theta_{i}^{*})^2
+\end{equation}
+where $\theta_i^*$ are the optimal parameters after task $t$ and $\lambda$ controls how strongly prior knowledge is preserved.
+
+\textbf{Experience Replay:} A fixed-size replay buffer (2,000 volumetric crops) stores representative samples from each completed task. During new task training, replay samples are interleaved with new data at a 50/50 ratio to maintain prior decision boundaries.
+
+\textbf{Selective Expert Adaptation:} For a new pathology under a single modality protocol (e.g., Meningioma via T1ce only), only $E_{T1ce}$ is unfrozen and fine-tuned, while $E_{T1}$, $E_{T2}$, and $E_{FLAIR}$ remain frozen, confining parameter drift to the minimally necessary subnetwork.
+
+\subsection{Anatomical Mapping \& Standardization}
+
+Clinical utility in automated robotic workflows requires anatomically grounded outputs, not just voxel masks. We implement a deterministic, reproducible localization pipeline.
+
+\subsubsection{MNI Space Registration}
+Patient MRI scans are registered to the MNI152 standard space via 12-parameter affine transformation (FLIRT):
+\begin{equation}
+T_{\text{affine}}(\mathbf{v}) = R \cdot S \cdot \mathbf{v} + \mathbf{t}
+\end{equation}
+where $R \in \mathbb{R}^{3\times3}$ is a rotation matrix, $S \in \mathbb{R}^{3\times3}$ encodes scaling and shearing, and $\mathbf{t} \in \mathbb{R}^3$ is a translation vector. The segmentation mask is then transformed into MNI space and overlaid on the Harvard-Oxford Cortical and Subcortical Atlases. Registration completes in 2--3 seconds on CPU, enabling near-real-time deployment.
+
+\subsubsection{Region Overlap Quantification}
+For each tumor component $c \in \{\text{ET},\,\text{TC},\,\text{WT}\}$ and atlas region $r$:
+\begin{equation}
+\text{Overlap}_{c,r} = \frac{|\mathbf{M}_c \cap \mathbf{R}_r|}{|\mathbf{R}_r|} \times 100\%
+\end{equation}
+The top-$K$ most affected regions per component are identified:
+\begin{equation}
+\text{TopK}(c) = \underset{r}{\text{arg-top-}K}\left(\text{Overlap}_{c,r}\right)
+\end{equation}
+
+\subsubsection{Volumetric and Lateralization Analysis}
+Absolute tumor volume per component:
+\begin{equation}
+V_c = |\mathbf{M}_c| \times v_{\text{voxel}} \;\text{mm}^3
+\end{equation}
+Hemisphere lateralization is determined by:
+\begin{equation}
+\text{Laterality} = \begin{cases}
+\text{Left}     & \text{if } |\mathbf{M}_c^{\text{left}}| > |\mathbf{M}_c^{\text{right}}| \\
+\text{Right}    & \text{if } |\mathbf{M}_c^{\text{right}}| > |\mathbf{M}_c^{\text{left}}| \\
+\text{Bilateral} & \text{if minority hemisphere} > 30\%
+\end{cases}
+\end{equation}
+
+\subsection{Structured JSON Schema: Human-Machine Interface}
+
+The anatomical analysis is encoded into a hierarchical JSON schema that serves as the interface layer between perception and report generation. This representation guarantees \textit{determinism} (identical segmentation $\rightarrow$ identical JSON), \textit{completeness} (all quantitative findings are captured), and \textit{traceability} (every report statement maps to a specific JSON field derived from segmentation).
+
+The schema contains five sections: (1) patient metadata; (2) imaging parameters; (3) segmentation results (volumes, confidence scores, centroid coordinates); (4) anatomical mapping (laterality, top-3 affected regions with overlap percentages); and (5) model provenance (architecture version, expert Dice scores, gating weights, inference time). Every value is computed deterministically from the segmentation mask and atlas, making the schema fully auditable for integration into robotic system logs.
+
+\textbf{Example:} For a case with enhancing tumor (ET: 8.5 cm³, confidence: 0.94) localized to the right middle frontal gyrus (overlap: 42.3\%):
+{\small\texttt{\{"segmentation\_results": \{"ET": \{"vol\_cm3": 8.5, "conf": 0.94\}\}, "anatomical\_mapping": \{"laterality": "right", "top\_regions": [\{"name": "Right Middle Frontal Gyrus", "overlap": 42.3\}]\}\}}}
+
+\subsection{Structured Report Generation}
+
+We employ a deterministic template engine that transforms the verified JSON schema into clinical radiology reports, avoiding hallucination entirely while remaining compatible with robotic clinical decision support systems.
+
+\subsubsection{Template Architecture}
+Five standardized report formats are implemented (standard clinical, detailed structured, concise summary, comprehensive academic, and operator-facing automation log). Each template contains three mandatory sections:
+\begin{itemize}
+    \item \textbf{Clinical Context:} Patient indication and imaging parameters from metadata.
+    \item \textbf{Findings:} Derived from JSON: tumor volumes and locations, peritumoral edema (WT $-$ TC volume), lateralization, mass effect flag, and top-3 affected atlas regions per component.
+    \item \textbf{Impression:} Rule-based clinical interpretation based on enhancement pattern, edema burden, and anatomical location, with a recommendation for tissue diagnosis.
+\end{itemize}
+
+Every numeric measurement and anatomical claim in the generated report is directly traceable to a specific JSON field, which itself derives from a specific set of segmentation voxels. This provenance chain is logged alongside each report output, enabling post-hoc audit and the transparency required for regulatory approval of autonomous medical systems.
+
+\section{Experiments and Results}
+\label{sec:results}
+
+\subsection{Experimental Setup}
+Experiments were conducted on the BraTS 2024 Glioma (GLI) dataset, comprising 1,620 annotated 3D multi-modal MRI cases (T1, T1ce, T2, FLAIR) with three segmentation classes: Whole Tumor (WT), Tumor Core (TC), and Enhancing Tumor (ET). A standard 80/20 train/validation split was applied after excluding corrupted cases. Hardware: single NVIDIA RTX 3080 (10GB VRAM), crop size $64^3$, AMP mixed precision, and per-modality H5 files for efficient data loading.
+
+The continual learning experiment simulates a hospital sequentially expanding its diagnostic capabilities:
+\begin{enumerate}
+    \item \textbf{Task 1 (Glioma Baseline):} All four modality experts trained independently on BraTS 2024 GLI.
+    \item \textbf{Task 2 (Meningioma Adaptation):} Sequential fine-tuning of $E_{T1ce}$ on a Meningioma subset (T1ce only, 500 cases) with EWC + Replay active.
+\end{enumerate}
+
+\subsection{Stage 1: Per-Modality Expert Performance}
+Table~\ref{tab:results} compares MoME+ against standard benchmarks on BraTS 2021 (commonly used for cross-architecture comparison). Table~\ref{tab:modality_results} presents individual expert performance on the BraTS 2024 GLI validation set.
+
+\begin{table}[htbp]
+\caption{Glioma Segmentation Performance: Architecture Comparison (Dice Score)}
+\begin{center}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Architecture} & \textbf{Mean} & \textbf{WT} & \textbf{TC} & \textbf{ET} \\
+\midrule
+3D U-Net \cite{ronneberger2015unet}   & 0.840 & 0.892 & 0.843 & 0.786 \\
+nnU-Net \cite{isensee2021nnu}         & 0.866 & 0.915 & 0.871 & 0.812 \\
+UNETR \cite{hatamizadeh2022unetr}     & 0.871 & 0.919 & 0.875 & 0.818 \\
+Swin UNETR \cite{hatamizadeh2022swin} & 0.876 & 0.926 & 0.879 & 0.823 \\
+MoME \cite{zhang2024mome}             & 0.883 & 0.934 & 0.885 & 0.831 \\
+\midrule
+\textbf{MoME+ (Ours, fused)}$^\dagger$ & \textbf{0.8150} & -- & -- & -- \\
+\bottomrule
+\multicolumn{5}{l}{$^\dagger$Single RTX 3080 10GB; $64^3$ crop; no TTA.}
+\end{tabular}
+\label{tab:results}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Per-Modality Expert Performance on BraTS 2024 GLI Validation Set (Dice Score)}
+\begin{center}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Modality Expert} & \textbf{Mean} & \textbf{WT} & \textbf{TC} & \textbf{ET} \\
+\midrule
+T1     & 0.7206 & 0.7822 & 0.7014 & 0.6776 \\
+T2     & 0.7438 & 0.8251 & 0.7188 & 0.6875 \\
+FLAIR  & 0.6991 & 0.8338 & 0.6473 & 0.6163 \\
+\textbf{T1CE} & \textbf{0.7889} & \textbf{0.7614} & \textbf{0.8130} & \textbf{0.7922} \\
+\bottomrule
+\end{tabular}
+\label{tab:modality_results}
+\end{center}
+\end{table}
+
+The results confirm the MoME+ expert specialization hypothesis. The T1CE expert achieves the highest mean Dice (0.7889) and leads on TC (0.8130) and ET (0.7922), which are sub-regions highlighted by gadolinium contrast enhancement. The FLAIR expert achieves the highest WT Dice (0.8338), consistent with its clinical role in capturing peritumoral edema. The T2 expert provides strong WT performance (0.8251), while T1 offers balanced but lower scores reflecting its role in anatomical context. This functional specialization, where each expert learns representations aligned with its modality's contrast mechanism, validates the modular architecture and supports the interpretability needed for robotic deployment.
+
+\subsection{Stage 2: Fusion Network Results}
+The hierarchical gating network was trained on the BraTS 2024 GLI dataset with all four expert networks frozen. Training used AdamW (LR: $10^{-4}$, weight decay: $10^{-4}$), batch size 4, AMP mixed precision, and validation every 5 epochs with early stopping (patience: 15). The gating network learns optimal modality importance weights $\{w_i\}$ per input, emphasizing the most diagnostically relevant expert for each case. The fused MoME+ system achieves a mean Dice of \textbf{0.8150} on the BraTS 2024 GLI validation set, outperforming all individual modality experts and confirming the benefit of hierarchical gating fusion.
+
+\subsection{Continual Learning Validation}
+For Task 2 (Meningioma, T1ce-only protocol), $E_{T1}$, $E_{T2}$, and $E_{FLAIR}$ were frozen while only $E_{T1ce}$ was fine-tuned. EWC regularization ($\lambda = 400$) and replay buffer (2,000 crops, 50/50 new/replay mixing) were active throughout. The model converged on the Meningioma task while retaining segmentation capability on Glioma validation samples. Results confirm that EWC + Replay with selective expert adaptation suppresses catastrophic forgetting, a critical property for medical robotic systems requiring continuous operation without full dataset storage.
+
+\subsection{Report Generation Performance}
+The deterministic template engine was evaluated on 30 held-out test cases using standard NLG metrics against radiologist-authored reference reports. Results are presented in Table~\ref{tab:report_results}.
+
+\begin{table}[htbp]
+\caption{Report Generation Performance (Template-Based)}
+\begin{center}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Method} & \textbf{BLEU-4} & \textbf{ROUGE-L} & \textbf{METEOR} & \textbf{Hallucination} \\
+\midrule
+Template-Based & \textbf{44.73} & \textbf{0.653} & \textbf{0.397} & \textbf{0\%} \\
+\bottomrule
+\end{tabular}
+\label{tab:report_results}
+\end{center}
+\end{table}
+
+The system achieves strong NLG scores with absolute factual accuracy: manual audit of all 30 reports confirmed 100\% accuracy in volumetric transcription and anatomical region identification, and a 0\% hallucination rate. This contrasts with end-to-end LLM approaches where hallucination in clinical NLG remains a documented concern \cite{singhal2023medpalm}. Zero hallucination is a non-negotiable requirement for autonomous clinical systems, and our deterministic pipeline guarantees it by design.
+
+\section{Discussion}
+
+\subsection{Architectural Suitability for Clinical Robotics}
+The MoME+ two-stage training strategy offers clear advantages for robotic system integration beyond segmentation accuracy. First, the modular expert structure allows individual subnetworks to be updated in isolation. A robot deployed in a hospital can receive a targeted expert update (e.g., a new T2 expert trained on an upgraded scanner) without system downtime or full model retraining. Second, the fixed JSON schema provides a stable, versioned interface between the perception module and downstream robotic planning systems, analogous to a hardware abstraction layer in embedded systems. Third, deterministic report generation guarantees reproducibility: given the same segmentation input, the system always produces the same structured output, which is essential for logging, auditing, and replaying robotic decision sequences.
+
+\subsection{Performance Contextualization}
+The fused MoME+ achieves a mean Dice of 0.8150, which is below state-of-the-art methods trained with larger crops, multi-GPU setups, and test-time augmentation. This gap is expected: our framework operates under an RTX 3080 10GB constraint with $64^3$ crops versus the $128^3$ crops used by top BraTS 2024 systems. Our primary optimization target is the continual learning infrastructure and auditability architecture, not raw benchmark Dice. The per-expert results (T1CE Dice 0.7889 on TC and ET) confirm that the modality-specific representations are clinically meaningful, and the gating fusion network further improves the combined score to 0.8150 through optimal inter-expert weight allocation.
+
+\subsection{Limitations and Future Directions}
+The current validation spans two sequential tasks. Real-world robotic deployment would require validation over longer task chains (Glioma $\rightarrow$ Meningioma $\rightarrow$ Metastasis $\rightarrow$ Stroke) with comprehensive forgetting metrics. Future work will: (i) implement curriculum learning aligned with the MoME anti-degeneration strategy \cite{zhang2024mome}; (ii) conduct human-in-the-loop studies measuring the impact of template reports on radiologist decision efficiency; and (iii) validate the full pipeline on real clinical MRI data with expert radiologist scoring.
+
+\section{Conclusion}
+
+We presented a modular, continually learning perception-to-report pipeline for medical imaging automation, designed for integration into clinical robotic ecosystems. The two-stage MoME+ strategy, comprising per-modality expert specialization followed by hierarchical gating fusion, enables interpretable, modular segmentation compatible with continual adaptation via EWC and selective expert updates. A deterministic atlas-based anatomical mapping layer provides certifiable spatial provenance, while a JSON-mediated human-machine interface and template-based report engine guarantee zero hallucination with full factual traceability. Validated on BraTS 2024, the framework achieves per-expert Dice scores of up to 0.7889 (T1CE), a fused mean Dice of 0.8150, BLEU-4 of 44.73 in report generation, and successful Glioma-to-Meningioma continual learning without catastrophic forgetting.
+
+This work establishes a practical architectural blueprint for diagnostic intelligence in medical robotic systems, where the requirements go beyond high accuracy to include \textit{safety}, \textit{adaptability}, and \textit{full auditability}.
+
+\bibliographystyle{IEEEtran}
+\bibliography{ICRAI_2026_references}
+
+\end{document}
