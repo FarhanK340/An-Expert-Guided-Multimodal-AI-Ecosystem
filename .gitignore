@@ -229,3 +229,7 @@ coverage.xml
 
 frontend/node_modules
 
+
+# Output visualizations
+output/slice_visualizations/
+*.png

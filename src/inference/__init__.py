@@ -10,9 +10,11 @@ from .inference_engine import (
     run_single_expert_inference,
     run_full_inference
 )
+from .slice_visualizer import SliceVisualizer
 
 __all__ = [
     "InferenceEngine",
     "run_single_expert_inference", 
-    "run_full_inference"
+    "run_full_inference",
+    "SliceVisualizer",
 ]

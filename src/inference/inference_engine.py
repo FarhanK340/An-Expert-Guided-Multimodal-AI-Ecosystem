@@ -73,19 +73,21 @@ class InferenceEngine:
         """
         if mask is not None:
             # Normalize only within brain region
-            brain_voxels = volume[mask > 0]
-            mean = brain_voxels.mean()
-            std = brain_voxels.std() + 1e-8
+            brain_mask = mask > 0
         else:
             # Normalize entire volume (excluding zeros)
-            non_zero = volume[volume > 0]
-            if len(non_zero) > 0:
-                mean = non_zero.mean()
-                std = non_zero.std() + 1e-8
-            else:
-                mean, std = 0.0, 1.0
+            brain_mask = volume > 0
+            
+        if brain_mask.sum() == 0:
+            return volume
+            
+        mean = volume[brain_mask].mean()
+        std = volume[brain_mask].std() + 1e-8
         
-        return (volume - mean) / std
+        normalized = np.zeros_like(volume)
+        normalized[brain_mask] = (volume[brain_mask] - mean) / std
+        
+        return normalized
     
     def load_nifti(self, path: Union[str, Path]) -> Tuple[np.ndarray, nib.Nifti1Image]:
         """
@@ -154,29 +156,35 @@ class InferenceEngine:
         """
         Run inference with full MoME+ model (all experts + fusion).
         
+        The model outputs 3 independent logit channels (WT, TC, ET) that are
+        NOT mutually exclusive — each is thresholded independently with sigmoid.
+        
         Args:
             modality_volumes: Dict of {modality_name: normalized_volume}
                 Expected keys: ["T1", "T1ce", "T2", "FLAIR"]
                 
         Returns:
             Dict containing:
-                - "segmentation": Final fused segmentation (D, H, W)
-                - "probabilities": Per-class probabilities (3, D, H, W)
-                - "expert_weights": Per-voxel expert weights (optional)
+                - "segmentation": BraTS-convention mask (0=bg, 2=edema,
+                    1=necrotic, 4=enhancing) with same spatial shape as input
+                - "probabilities": Per-channel sigmoid probabilities (3, ...)
         """
         # Verify we have a MoMESegmenter
         if not isinstance(self.model, MoMESegmenter):
             raise ValueError("Full MoME prediction requires MoMESegmenter model")
         
-        # Get volume shape from first modality
+        # Get volume shape from first modality — NIfTI native is (H, W, D)
         first_key = list(modality_volumes.keys())[0]
-        volume_shape = modality_volumes[first_key].shape
+        hwz_shape = modality_volumes[first_key].shape   # (H, W, D)
+        D, H, W = hwz_shape[2], hwz_shape[0], hwz_shape[1]
         
-        # Prepare inputs
+        # Prepare inputs — permute from NIfTI (H,W,D) to tensor (D,H,W)
+        # This matches the backend inference_utils.py convention.
         inputs = {}
         for modality, volume in modality_volumes.items():
             tensor = torch.from_numpy(volume).float()
-            tensor = tensor.unsqueeze(0).unsqueeze(0).to(self.device)
+            tensor = tensor.permute(2, 0, 1)     # (H,W,D) -> (D,H,W)
+            tensor = tensor.unsqueeze(0).unsqueeze(0).to(self.device)  # (1,1,D,H,W)
             inputs[modality] = tensor
         
         def predictor(stacked_input):
@@ -197,11 +205,12 @@ class InferenceEngine:
                 return output["segmentation"]
         
         # Stack all modalities: (1, 4, D, H, W)
+        dhw_shape = (D, H, W)
         stacked = torch.cat([
-            inputs.get("T1", torch.zeros(1, 1, *volume_shape, device=self.device)),
-            inputs.get("T1ce", torch.zeros(1, 1, *volume_shape, device=self.device)),
-            inputs.get("T2", torch.zeros(1, 1, *volume_shape, device=self.device)),
-            inputs.get("FLAIR", torch.zeros(1, 1, *volume_shape, device=self.device))
+            inputs.get("T1", torch.zeros(1, 1, *dhw_shape, device=self.device)),
+            inputs.get("T1ce", torch.zeros(1, 1, *dhw_shape, device=self.device)),
+            inputs.get("T2", torch.zeros(1, 1, *dhw_shape, device=self.device)),
+            inputs.get("FLAIR", torch.zeros(1, 1, *dhw_shape, device=self.device))
         ], dim=1)
         
         # Sliding window inference
@@ -214,13 +223,32 @@ class InferenceEngine:
             mode='gaussian'
         )
         
-        # Process outputs
-        probs = F.softmax(prediction, dim=1)
-        labels = torch.argmax(probs, dim=1).squeeze(0)
+        # --- Multi-label post-processing (sigmoid + threshold) ---
+        # The 3 channels are independent: [WT, TC, ET]
+        probs = torch.sigmoid(prediction[0])   # (3, D, H, W)
+        probs_np = probs.cpu().numpy()
+        
+        wt_mask = (probs_np[0] > 0.5)
+        tc_mask = (probs_np[1] > 0.5)
+        et_mask = (probs_np[2] > 0.5)
+        
+        # Hierarchical BraTS mask assembly:
+        #   1. WT → edema (label 2)
+        #   2. TC → necrotic (label 1), overwrites edema
+        #   3. ET → enhancing (label 4), overwrites necrotic
+        seg = np.zeros(probs_np.shape[1:], dtype=np.uint8)   # (D, H, W)
+        seg[wt_mask] = 2    # edema
+        seg[tc_mask] = 1    # necrotic
+        seg[et_mask] = 4    # enhancing
+        
+        # Permute output back to NIfTI order (D,H,W) -> (H,W,D)
+        # so that the output matches the input convention of load_nifti
+        seg = np.transpose(seg, (1, 2, 0))
+        probs_np = np.transpose(probs_np, (0, 2, 3, 1))  # (3,D,H,W) -> (3,H,W,D)
         
         return {
-            "segmentation": labels.cpu().numpy(),
-            "probabilities": probs.squeeze(0).cpu().numpy()
+            "segmentation": seg,
+            "probabilities": probs_np
         }
     
     def save_prediction(
