@@ -92,7 +92,7 @@ export default function CasesPage() {
                         <table className="cases-table">
                             <thead>
                                 <tr>
-                                    <th>Case ID</th>
+                                    <th>Case Name</th>
                                     <th>Patient Info</th>
                                     <th>Field Strength</th>
                                     <th>Status</th>
