@@ -125,6 +125,23 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ── Cloud Storage (AWS S3) ─────────────────────────────────────────────────
+# Activated in production by setting USE_CLOUD_STORAGE=True in .env
+# All Django FileField uploads are transparently redirected to S3.
+if config('USE_CLOUD_STORAGE', default=False, cast=bool):
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+    AWS_S3_FILE_OVERWRITE = False          # don't clobber files with the same name
+    AWS_DEFAULT_ACL = 'private'            # files are private by default
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    # Override MEDIA_URL so file URLs point to S3
+    MEDIA_URL = f'https://{config("AWS_STORAGE_BUCKET_NAME", default="")}.s3.amazonaws.com/'
+
 # File upload settings
 DATA_UPLOAD_MAX_MEMORY_SIZE = config('MAX_UPLOAD_SIZE', default=1073741824, cast=int)  # 1GB
 FILE_UPLOAD_MAX_MEMORY_SIZE = config('MAX_UPLOAD_SIZE', default=1073741824, cast=int)
@@ -217,15 +234,25 @@ CELERY_TASK_TIME_LIMIT = config('INFERENCE_TIMEOUT', default=300, cast=int)
 CELERY_RESULT_BACKEND_DB = 'django-db'
 
 # Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+# django-redis is used when Redis is available; falls back to LocMemCache for
+# local dev without Docker.
+try:
+    import django_redis  # noqa: F401
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
         }
     }
-}
+except ImportError:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
 
 #Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
