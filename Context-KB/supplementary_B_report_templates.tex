@@ -1,0 +1,365 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+
+\lstdefinestyle{pycode}{
+    language=Python,
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{black!30},
+    backgroundcolor=\color{black!3},
+    xleftmargin=4pt, xrightmargin=4pt,
+    aboveskip=4pt,   belowskip=4pt,
+    keepspaces=true,
+    showstringspaces=false,
+    columns=fullflexible,
+    keywordstyle=\color{blue!70},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red!60!black}
+}
+\lstdefinestyle{reporttext}{
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{black!30},
+    backgroundcolor=\color{gray!6},
+    xleftmargin=4pt, xrightmargin=4pt,
+    aboveskip=4pt,   belowskip=4pt,
+    keepspaces=true,
+    showstringspaces=false,
+    columns=fullflexible
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Supplementary Material:\\
+From Segmentation to Structured Reports:\\
+Auditable Continual Learning for Automation in Medical Imaging Diagnostics}
+
+\author{
+\IEEEauthorblockN{Farhan Kashif, Ahmed Sultan, Muhammad Dawood Rizwan,
+Muhammad Naseer Bajwa, Muhammad Wakil Shahzad, Muhammad Moazam Fraz}
+}
+
+\maketitle
+
+\begin{abstract}
+This document accompanies the main paper and provides: (A) the JSON Schema Draft-07 specification derived from the production schema file \texttt{schemas/tumor\_descriptor\_schema.json}; and (B) all five deterministic report templates reproduced directly from \texttt{src/report\_generation/templates.py}, together with the findings and impression generation logic from the same module. The complete source code is available in the project repository.
+\end{abstract}
+
+%=============================================================
+\section*{Supplementary A: JSON Schema}
+%=============================================================
+
+\subsection*{A.1 Source File}
+
+The schema is defined in \texttt{schemas/tumor\_descriptor\_schema.json} and is loaded at runtime by \texttt{src/json\_generation/schema\_validator.py}. It is validated against every descriptor produced by \texttt{TumorDescriptorGenerator} before downstream use.
+
+\subsection*{A.2 Top-Level Structure}
+
+Table~\ref{tab:schema_top} lists the five required top-level fields. Each corresponds to one builder method in \texttt{TumorDescriptorGenerator} (\texttt{src/json\_generation/descriptor\_generator.py}).
+
+\begin{table}[htbp]
+\caption{JSON Schema Top-Level Fields (all required)}
+\begin{center}
+\begin{tabular}{l l p{3.8cm}}
+\toprule
+\textbf{Field} & \textbf{Builder Method} & \textbf{Description} \\
+\midrule
+\texttt{patient\_info}       & \texttt{\_build\_patient\_info()}       & Case ID, age, sex, scan date \\
+\texttt{imaging\_metadata}   & \texttt{\_build\_imaging\_metadata()}   & Modalities, scanner, resolution \\
+\texttt{segmentation\_results} & \texttt{\_extract\_segmentation\_results()} & Volumes, confidence, centroids \\
+\texttt{anatomical\_mapping} & \texttt{\_build\_anatomical\_mapping()} & Atlas regions, hemisphere, midline \\
+\texttt{model\_metadata}     & \texttt{\_build\_model\_metadata()}     & Model name, version, timestamp \\
+\bottomrule
+\end{tabular}
+\label{tab:schema_top}
+\end{center}
+\end{table}
+
+\subsection*{A.3 BraTS Label Convention}
+
+The segmentation label convention used in \texttt{\_extract\_segmentation\_results()} is:
+
+\begin{itemize}
+    \item Label \textbf{1}: Necrotic core / non-enhancing tumor core
+    \item Label \textbf{2}: Peritumoral edema
+    \item Label \textbf{4}: Enhancing tumor (ET)
+    \item \textbf{Whole Tumor (WT)}: all labels $> 0$ = \{1, 2, 4\}
+    \item \textbf{Tumor Core (TC)}: labels \{1, 4\}
+\end{itemize}
+
+\subsection*{A.4 Key Schema Definitions}
+
+\subsubsection*{\texttt{tumor\_component} definition}
+Each of the three tumor components (enhancing, necrotic, edema) follows this structure:
+
+\begin{lstlisting}[style=pycode]
+# From schemas/tumor_descriptor_schema.json -> definitions/tumor_component
+# Populated by TumorDescriptorGenerator._analyze_component(seg_data, label, voxel_vol)
+{
+  "present":          bool,   # np.any(seg_data == label)
+  "volume_mm3":       float,  # voxel_count * voxel_vol
+  "voxel_count":      int,    # np.sum(mask)
+  "confidence_score": float,  # mean sigmoid activation [0,1]
+  "centroid_coords":  [x, y, z]  # np.argwhere(mask).mean(axis=0)
+}
+\end{lstlisting}
+
+\subsubsection*{\texttt{affected\_region} definition}
+Each atlas region overlap record (from \texttt{region\_analysis.py}, formatted by \texttt{\_format\_subregion\_mapping()}):
+
+\begin{lstlisting}[style=pycode]
+# From schemas/tumor_descriptor_schema.json -> definitions/affected_region
+{
+  "region_id":                  int,    # Harvard-Oxford numeric ID
+  "region_name":                str,    # e.g., "Middle Frontal Gyrus"
+  "percentage_involvement":     float,  # % of region covered by tumor mask
+  "tumor_volume_in_region_mm3": float,  # absolute overlap volume
+  "total_region_volume_mm3":    float,  # optional
+  "hemisphere":                 str     # "left" | "right"
+}
+\end{lstlisting}
+
+\subsubsection*{Clinical Features (optional, auto-derived)}
+\begin{lstlisting}[style=pycode]
+# Built by TumorDescriptorGenerator._extract_clinical_features()
+{
+  "mass_effect":                bool,  # total_tumor_volume_mm3 > 10000
+  "ventricular_involvement":    bool,  # False (detection not yet implemented)
+  "eloquent_area_involvement":  list,  # ["motor_cortex"] if "Precentral" in top-5 regions
+  "estimated_grade":            str    # always "unknown" (requires clinical classifier)
+}
+\end{lstlisting}
+
+\subsection*{A.5 Descriptor Generation Pipeline}
+
+\begin{lstlisting}[style=pycode]
+# src/json_generation/descriptor_generator.py -- generate_descriptor()
+descriptor = TumorDescriptorGenerator(atlas_mapper=BrainAtlasMapper())
+json_doc = descriptor.generate_descriptor(
+    case_id      = 'BraTS-GLI-00006-100',
+    seg_path     = 'segmentation.nii.gz',
+    t1_path      = 't1.nii.gz',          # required for FLIRT registration
+    modalities   = ['T1', 'T1ce', 'T2', 'FLAIR'],
+    model_name   = 'MoME+',
+    model_version= 'v1.0.0'
+)
+# Descriptor is automatically validated against
+# schemas/tumor_descriptor_schema.json before return.
+\end{lstlisting}
+
+%=============================================================
+\section*{Supplementary B: Report Templates}
+%=============================================================
+
+\subsection*{B.1 Architecture Overview}
+
+Report generation is implemented in \texttt{src/report\_generation/} with three files:
+
+\begin{itemize}
+    \item \textbf{\texttt{templates.py}} — five report skeleton templates (\texttt{REPORT\_TEMPLATES[0--4]}) and two generation functions (\texttt{generate\_findings\_from\_json()}, \texttt{generate\_impression\_from\_json()})
+    \item \textbf{\texttt{report\_generator.py}} — \texttt{TemplateBasedGenerator} (deterministic, zero-hallucination) and \texttt{ReportGenerator} (LLM-based with LoRA, used for NLG metric evaluation)
+    \item \textbf{\texttt{dataset.py} / \texttt{metrics.py}} — BLEU/ROUGE/METEOR evaluation
+\end{itemize}
+
+The entry point is \texttt{TemplateBasedGenerator.generate(json\_data, template\_idx)} which calls \texttt{generate\_template\_report()} with \texttt{template\_idx \% 5} selecting the skeleton.
+
+\subsection*{B.2 Generation Logic}
+
+\subsubsection*{Findings Generation (\texttt{generate\_findings\_from\_json})}
+
+The findings section is assembled as a list of deterministically chosen sentences. Each sentence uses \texttt{template\_variation \% 5} to index into a set of five phrasings per finding type (reproducing variation without free-text generation):
+
+\begin{lstlisting}[style=pycode]
+# src/report_generation/templates.py -- generate_findings_from_json()
+
+tumor_descriptions = [          # indexed by var_idx (0-4)
+    "A {type} tumor measuring {volume} cm3 is identified",
+    "There is a {type} lesion measuring approximately {volume} cm3",
+    "{type} mass lesion identified, measuring {volume} cm3",
+    "An abnormal {type} mass measuring {volume} cm3 is present",
+    "Focal {type} lesion measuring {volume} cm3"
+]
+location_descriptions = [
+    "centered in the {location}",
+    "primarily involving the {location}",
+    "located in the {location}",
+    "within the {location}",
+    "affecting the {location}"
+]
+involvement_descriptions = [
+    "with {overlap}% regional involvement",
+    "demonstrating {overlap}% involvement of the region",
+    "occupying approximately {overlap}% of the {location}",
+    "with significant involvement ({overlap}%)",
+    "involving {overlap}% of the {location}"
+]
+# JSON path used:
+#   seg_results['enhancing_tumor']['volume_cm3']
+#   anatomical['enhancing_tumor_regions'][0]['overlap_percent']
+#   anatomical['enhancing_tumor_regions'][0]['name']
+\end{lstlisting}
+
+Subsequent sentences cover: tumor core volume, peritumoral edema ($WT\_vol - TC\_vol$), laterality, and mass effect flag.
+
+\subsubsection*{Impression Generation (\texttt{generate\_impression\_from\_json})}
+
+Five fixed impression strings (no free generation). The presence check uses:
+
+\begin{lstlisting}[style=pycode]
+has_tumor = any(
+    seg_results.get(key, {}).get('volume_cm3', 0) > 0.1
+    for key in ['enhancing_tumor', 'tumor_core', 'whole_tumor']
+)
+# If False -> "No evidence of intracranial mass lesion."
+# If True  -> impressions[var_idx] (one of five fixed strings)
+\end{lstlisting}
+
+\subsection*{B.3 The Five Report Templates}
+
+Templates are stored in \texttt{REPORT\_TEMPLATES} as a Python list. Each is a format string consuming three fields: \texttt{\{clinical\_history\}}, \texttt{\{modalities\}}, \texttt{\{findings\}}, \texttt{\{impression\}}. The \texttt{findings} and \texttt{impression} values are produced by the two generation functions described above; \texttt{clinical\_history} and \texttt{modalities} come directly from the JSON descriptor.
+
+\subsubsection*{Template 0 (index 0): Standard Clinical Format}
+
+\begin{lstlisting}[style=reporttext]
+CLINICAL HISTORY: {clinical_history}
+
+TECHNIQUE: Multi-sequence MRI brain examination including {modalities}.
+
+FINDINGS:
+{findings}
+
+IMPRESSION:
+{impression}
+\end{lstlisting}
+
+\subsubsection*{Template 1 (index 1): Detailed Structured Format}
+
+\begin{lstlisting}[style=reporttext]
+MRI BRAIN WITH AND WITHOUT CONTRAST
+
+CLINICAL INDICATION: {clinical_history}
+
+IMAGING TECHNIQUE: {modalities} sequences acquired.
+
+FINDINGS:
+{findings}
+
+IMPRESSION:
+{impression}
+\end{lstlisting}
+
+\subsubsection*{Template 2 (index 2): Concise Format}
+
+\begin{lstlisting}[style=reporttext]
+EXAMINATION: MRI Brain
+INDICATION: {clinical_history}
+
+FINDINGS:
+{findings}
+
+IMPRESSION:
+{impression}
+\end{lstlisting}
+
+\subsubsection*{Template 3 (index 3): Comprehensive Format}
+
+\begin{lstlisting}[style=reporttext]
+BRAIN MRI REPORT
+
+Clinical History: {clinical_history}
+
+Technique: Multiparametric MRI including {modalities} sequences.
+
+Findings:
+{findings}
+
+Impression:
+{impression}
+\end{lstlisting}
+
+\subsubsection*{Template 4 (index 4): Academic / Conclusion Format}
+
+\begin{lstlisting}[style=reporttext]
+MRI BRAIN EXAMINATION
+
+HISTORY: {clinical_history}
+
+PROTOCOL: {modalities}
+
+FINDINGS:
+{findings}
+
+CONCLUSION:
+{impression}
+\end{lstlisting}
+
+\subsection*{B.4 Complete Generated Report Example (Template 0, Variation 0)}
+
+The following is a representative output of \texttt{TemplateBasedGenerator.generate(json\_data, template\_idx=0)} for a right-sided high-grade glioma case:
+
+\begin{lstlisting}[style=reporttext]
+CLINICAL HISTORY: Brain tumor evaluation
+
+TECHNIQUE: Multi-sequence MRI brain examination including T1, T1ce, T2, FLAIR.
+
+FINDINGS:
+A enhancing tumor measuring 8.5 cm3 is identified centered in the
+Middle Frontal Gyrus with 42.3% regional involvement.
+The tumor core measures 38.2 cm3.
+Peritumoral edema extending into adjacent white matter measuring
+approximately 34.2 cm3.
+The lesion is right hemispheric in distribution.
+No significant midline shift is observed.
+
+IMPRESSION:
+The imaging findings are consistent with a primary brain neoplasm,
+likely high-grade glioma given the enhancement pattern and degree of
+edema. Clinical correlation and tissue diagnosis recommended.
+\end{lstlisting}
+
+\noindent\textbf{Zero-hallucination guarantee:} Every numeric value in the FINDINGS section is retrieved directly from the validated JSON descriptor (volumes from \texttt{segmentation\_results}, region name and overlap from \texttt{anatomical\_mapping.subregion\_mapping.enhancing\_tumor[0]}). No language model inference is involved in the template pathway.
+
+%=============================================================
+\section*{Supplementary C: Companion File Index}
+%=============================================================
+
+\begin{table}[htbp]
+\caption{Supplementary Files Provided}
+\begin{center}
+\begin{tabular}{l p{5cm}}
+\toprule
+\textbf{Filename} & \textbf{Contents} \\
+\midrule
+\texttt{supplementary\_A\_json\_schema.json} & Full JSON Schema Draft-07 (mirrors \texttt{schemas/tumor\_descriptor\_schema.json} with added annotations) \\
+\texttt{supplementary\_B\_report\_templates.tex} & This document (LaTeX source) \\
+\texttt{supplementary\_B\_report\_templates.pdf} & Compiled PDF \\
+\midrule
+\multicolumn{2}{l}{\textit{Source files (in repository):}} \\
+\texttt{schemas/tumor\_descriptor\_schema.json} & Production schema \\
+\texttt{src/json\_generation/descriptor\_generator.py} & JSON generation \\
+\texttt{src/json\_generation/schema\_validator.py} & Runtime validation \\
+\texttt{src/report\_generation/templates.py} & Template strings + generation logic \\
+\texttt{src/report\_generation/report\_generator.py} & Generator classes \\
+\texttt{src/models/gating\_network.py} & \texttt{HierarchicalGatingNetwork} + \texttt{ExpertFusion} \\
+\texttt{src/atlas\_mapping/} & FLIRT registration + region analysis \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+\end{document}

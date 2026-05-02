@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Activity, FolderOpen, CheckCircle, Clock } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +10,7 @@ export default function DashboardPage() {
     const { isPatient } = useAuth();
     const [cases, setCases] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const navigate = useNavigate();
 
     // Patients get their own specialised dashboard
     if (isPatient) return <PatientDashboardPage />;
@@ -59,7 +61,8 @@ export default function DashboardPage() {
 
     // Get recent 5 cases
     const recentCases = cases.slice(0, 5).map(case_ => ({
-        id: case_.patientId,
+        id: case_.caseId,
+        caseName: case_.patientId,
         age: case_.age || 'N/A',
         sex: case_.sex || 'N/A',
         status: case_.status,
@@ -129,7 +132,7 @@ export default function DashboardPage() {
                             <table className="cases-table">
                                 <thead>
                                     <tr>
-                                        <th>Case ID</th>
+                                        <th>Case Name</th>
                                         <th>Age</th>
                                         <th>Sex</th>
                                         <th>Status</th>
@@ -141,7 +144,7 @@ export default function DashboardPage() {
                                     {recentCases.map((case_) => (
                                         <tr key={case_.id}>
                                             <td>
-                                                <span className="case-id">{case_.id}</span>
+                                                <span className="case-id">{case_.caseName}</span>
                                             </td>
                                             <td>{case_.age}</td>
                                             <td>{case_.sex}</td>
@@ -152,7 +155,9 @@ export default function DashboardPage() {
                                             </td>
                                             <td className="text-neutral">{case_.date}</td>
                                             <td>
-                                                <button className="btn btn-sm btn-ghost">View</button>
+                                                <button className="btn btn-sm btn-ghost"
+                                                onClick={() => navigate(`/cases/${case_.id}`)}
+                                                >View</button>
                                             </td>
                                         </tr>
                                     ))}
