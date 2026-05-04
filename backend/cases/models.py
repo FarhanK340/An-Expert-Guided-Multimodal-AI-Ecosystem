@@ -258,6 +258,7 @@ class Slice2DVisualization(models.Model):
     # Metadata
     modality = models.CharField(max_length=10, choices=MRIImage.MODALITY_CHOICES)
     has_overlay = models.BooleanField(default=True)
+    is_ground_truth = models.BooleanField(default=False, help_text="True if this visualization represents the ground truth mask")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

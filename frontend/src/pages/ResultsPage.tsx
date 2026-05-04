@@ -257,6 +257,92 @@ export default function ResultsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* 2D Slice Visualizations Card */}
+                {resultData.slice_images && resultData.slice_images.length > 0 && (
+                    <div className="card" style={{ gridColumn: '1 / -1' }}>
+                        <div className="card-header">
+                            <h3>
+                                <Eye size={20} style={{ marginRight: '0.5rem' }} />
+                                2D Slice Visualizations
+                            </h3>
+                        </div>
+                        <div className="card-body">
+                            <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginBottom: '1rem' }}>
+                                Axial slice showing Input MRI alongside Whole Tumor (green), Tumor Core (yellow), and Enhancing Tumor (red) segmentation overlays.
+                            </p>
+                            <div className="slice-viz-container">
+                                {resultData.slice_images.map((img: any, idx: number) => {
+                                    const imgUrl = img.url?.startsWith('http') ? img.url : `http://localhost:8000${img.url}`;
+                                    return (
+                                        <div key={idx} className="slice-viz-item">
+                                            <div className="slice-viz-label">
+                                                <span className={`slice-badge ${img.has_overlay ? 'badge-overlay' : 'badge-standalone'}`}>
+                                                    {img.has_overlay ? 'Overlay' : 'Standalone'}
+                                                </span>
+                                                <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>
+                                                    {img.plane} — slice {img.slice_index}
+                                                </span>
+                                            </div>
+                                            <img
+                                                src={imgUrl}
+                                                alt={`${img.has_overlay ? 'Overlay' : 'Standalone'} — ${img.plane} slice ${img.slice_index}`}
+                                                className="slice-viz-image"
+                                                onClick={() => setViewerImage({
+                                                    url: imgUrl,
+                                                    modality: `${img.has_overlay ? 'Overlay' : 'Standalone'} — Slice ${img.slice_index}`
+                                                })}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* Ground Truth 2D Slice Visualizations Card */}
+                {resultData.gt_slice_images && resultData.gt_slice_images.length > 0 && (
+                    <div className="card" style={{ gridColumn: '1 / -1' }}>
+                        <div className="card-header">
+                            <h3>
+                                <Eye size={20} style={{ marginRight: '0.5rem' }} />
+                                Ground Truth 2D Slice Visualizations
+                            </h3>
+                        </div>
+                        <div className="card-body">
+                            <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginBottom: '1rem' }}>
+                                Axial slice showing Input MRI alongside the uploaded Ground Truth mask.
+                            </p>
+                            <div className="slice-viz-container">
+                                {resultData.gt_slice_images.map((img: any, idx: number) => {
+                                    const imgUrl = img.url?.startsWith('http') ? img.url : `http://localhost:8000${img.url}`;
+                                    return (
+                                        <div key={idx} className="slice-viz-item">
+                                            <div className="slice-viz-label">
+                                                <span className={`slice-badge ${img.has_overlay ? 'badge-overlay' : 'badge-standalone'}`}>
+                                                    {img.has_overlay ? 'Overlay' : 'Standalone'}
+                                                </span>
+                                                <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>
+                                                    {img.plane} — slice {img.slice_index}
+                                                </span>
+                                            </div>
+                                            <img
+                                                src={imgUrl}
+                                                alt={`GT ${img.has_overlay ? 'Overlay' : 'Standalone'} — ${img.plane} slice ${img.slice_index}`}
+                                                className="slice-viz-image"
+                                                onClick={() => setViewerImage({
+                                                    url: imgUrl,
+                                                    modality: `GT ${img.has_overlay ? 'Overlay' : 'Standalone'} — Slice ${img.slice_index}`
+                                                })}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
                 {/* Ground Truth Upload Card */}
                 <div className="card">
                     <div className="card-header">

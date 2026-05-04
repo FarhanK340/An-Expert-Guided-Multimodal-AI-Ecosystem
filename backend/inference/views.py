@@ -178,6 +178,32 @@ class GetSegmentationResultView(APIView):
             'updated_at': result.updated_at.isoformat()
         }
         
+        # Include 2D slice visualizations if available
+        from cases.models import Slice2DVisualization
+        pred_slice_vizs = Slice2DVisualization.objects.filter(segmentation_result=result, is_ground_truth=False)
+        if pred_slice_vizs.exists():
+            response_data['slice_images'] = [
+                {
+                    'plane': sv.plane,
+                    'slice_index': sv.slice_index,
+                    'url': sv.image_file.url if sv.image_file else None,
+                    'has_overlay': sv.has_overlay,
+                }
+                for sv in pred_slice_vizs
+            ]
+            
+        gt_slice_vizs = Slice2DVisualization.objects.filter(segmentation_result=result, is_ground_truth=True)
+        if gt_slice_vizs.exists():
+            response_data['gt_slice_images'] = [
+                {
+                    'plane': sv.plane,
+                    'slice_index': sv.slice_index,
+                    'url': sv.image_file.url if sv.image_file else None,
+                    'has_overlay': sv.has_overlay,
+                }
+                for sv in gt_slice_vizs
+            ]
+        
         return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -303,8 +329,84 @@ class UploadGroundTruthView(APIView):
                 }
                 
                 result.structured_findings['ground_truth_comparison'] = comparison
+                
+                # Add 2D Slice Visualizations for GT
+                from cases.models import MRIImage, Slice2DVisualization
+                from src.inference.slice_visualizer import SliceVisualizer
+                
+                # Get T1ce or any available MRI
+                mri_img = MRIImage.objects.filter(case=case, modality='t1ce').first()
+                if not mri_img:
+                    mri_img = MRIImage.objects.filter(case=case).first()
+                
+                if mri_img:
+                    mri_path = Path(settings.MEDIA_ROOT) / mri_img.file_path.name
+                    mri_nii = nib.load(str(mri_path))
+                    mri_vol = mri_nii.get_fdata().astype(np.float32)
+                    mri_vol = np.transpose(mri_vol, (2, 0, 1)) # to (D, H, W)
+                    
+                    gt_vol = np.transpose(gt_data, (2, 0, 1)) # to (D, H, W)
+                    
+                    viz = SliceVisualizer()
+                    slice_dir = case_dir / 'slices'
+                    slice_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Generate overlay composite
+                    overlay_files = viz.generate_from_arrays(
+                        mri_volume=mri_vol,
+                        brats_mask=gt_vol,
+                        output_dir=str(slice_dir),
+                        plane='axial',
+                        prefix=f'{case.case_id}_gt_overlay',
+                        save_individual=False,
+                        save_composite=True,
+                        overlay_mode=True,
+                    )
+                    
+                    # Delete existing GT slices if any
+                    Slice2DVisualization.objects.filter(segmentation_result=result, is_ground_truth=True).delete()
+                    
+                    if 'composite' in overlay_files:
+                        best_slice = viz.find_best_slice(gt_vol, 'axial')
+                        rel_path_img = str(Path(overlay_files['composite']).relative_to(settings.MEDIA_ROOT))
+                        
+                        Slice2DVisualization.objects.create(
+                            segmentation_result=result,
+                            plane='axial',
+                            slice_index=best_slice,
+                            image_file=rel_path_img,
+                            modality='t1ce' if mri_img.modality == 't1ce' else mri_img.modality,
+                            has_overlay=True,
+                            is_ground_truth=True
+                        )
+                        
+                    # Generate standalone composite
+                    standalone_files = viz.generate_from_arrays(
+                        mri_volume=mri_vol,
+                        brats_mask=gt_vol,
+                        output_dir=str(slice_dir),
+                        plane='axial',
+                        prefix=f'{case.case_id}_gt_standalone',
+                        save_individual=False,
+                        save_composite=True,
+                        overlay_mode=False,
+                    )
+                    
+                    if 'composite' in standalone_files:
+                        best_slice = viz.find_best_slice(gt_vol, 'axial')
+                        rel_path_img = str(Path(standalone_files['composite']).relative_to(settings.MEDIA_ROOT))
+                        
+                        Slice2DVisualization.objects.create(
+                            segmentation_result=result,
+                            plane='axial',
+                            slice_index=best_slice,
+                            image_file=rel_path_img,
+                            modality='t1ce' if mri_img.modality == 't1ce' else mri_img.modality,
+                            has_overlay=False,
+                            is_ground_truth=True
+                        )
             except Exception as e:
-                print(f"Failed to calculate ground truth metrics: {e}")
+                print(f"Failed to calculate ground truth metrics and visualizations: {e}")
 
             result.save()
 

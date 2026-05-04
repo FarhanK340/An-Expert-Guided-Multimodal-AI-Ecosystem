@@ -233,3 +233,4 @@ frontend/node_modules
 # Output visualizations
 output/slice_visualizations/
 *.png
+backend/cases/migrations/

@@ -256,7 +256,12 @@ class InferenceEngine:
         ref_affine = preprocessor.get_reference_affine(case_dir)
         mask_files = self._save_masks(brats_mask, seg_np, ref_affine, case_dir)
 
-        # --- 7. Persist to DB --------------------------------------------
+        # --- 7. Generate 2D slice visualizations -------------------------
+        slice_image_urls = self._generate_slice_visualizations(
+            brats_mask, volumes_np, case_id, case_dir,
+        )
+
+        # --- 8. Persist to DB --------------------------------------------
         try:
             case = Case.objects.get(case_id=case_id)
         except Case.DoesNotExist:
@@ -286,14 +291,17 @@ class InferenceEngine:
                     'model_version':         'MoME+ v1.0',
                     'device':                str(self.device),
                     'full_segmentation_mask': mask_files.get('full_segmentation', ''),
+                    'slice_images':          slice_image_urls,
                 },
             }
         )
 
+        # Save Slice2DVisualization DB records
+        self._save_slice_records(seg_result, slice_image_urls, case_id)
+
         case.status = 'completed'
         case.save(update_fields=['status'])
         logger.info(f"Inference complete for case {case_id}. created={created}")
-
 
         return {
             'case_id': case_id,
@@ -301,6 +309,7 @@ class InferenceEngine:
             'confidence_scores': confidence,
             'gating_weights': gating_weights,
             'mask_files': mask_files,
+            'slice_images': slice_image_urls,
             'created': created,
         }
 
@@ -322,8 +331,8 @@ class InferenceEngine:
         ckpt_path    = Path(settings.BASE_DIR) / ml_config.get(
             'segmentation_model_path', 'models/checkpoints/mome_segmenter.pth'
         )
-        # Experts live in repo-root models/, not backend/models/
-        expert_dir   = REPO_ROOT / 'models' / 'checkpoints' / 'experts'
+        # Experts live in repo-root experiments/checkpoints/experts/
+        expert_dir   = REPO_ROOT / 'experiments' / 'checkpoints' / 'experts'
 
         model = MoMESegmenter(
             modalities=['T1', 'T1ce', 'T2', 'FLAIR'],
@@ -338,7 +347,7 @@ class InferenceEngine:
         # Load main checkpoint
         if ckpt_path.exists():
             logger.info(f"Loading MoMESegmenter checkpoint from {ckpt_path}")
-            ckpt = torch.load(ckpt_path, map_location=self.device)
+            ckpt = torch.load(ckpt_path, map_location=self.device, weights_only=False)
             if isinstance(ckpt, dict) and 'model_state_dict' in ckpt:
                 model.load_state_dict(ckpt['model_state_dict'], strict=False)
             elif isinstance(ckpt, dict) and 'state_dict' in ckpt:
@@ -364,7 +373,7 @@ class InferenceEngine:
                 expert_ckpt = expert_dir / cname
                 if expert_ckpt.exists() and mod in model.experts:
                     logger.info(f"Loading expert checkpoint for {mod}: {expert_ckpt}")
-                    e_ckpt = torch.load(expert_ckpt, map_location=self.device)
+                    e_ckpt = torch.load(expert_ckpt, map_location=self.device, weights_only=False)
                     state  = e_ckpt.get('model_state_dict', e_ckpt.get('state_dict', e_ckpt))
                     model.experts[mod].load_state_dict(state, strict=False)
                     break
@@ -373,7 +382,7 @@ class InferenceEngine:
         fusion_ckpt_path = expert_dir / 'mome_fusion_best.pth'
         if fusion_ckpt_path.exists():
             logger.info(f"Loading fusion/gating checkpoint: {fusion_ckpt_path}")
-            f_ckpt = torch.load(fusion_ckpt_path, map_location=self.device)
+            f_ckpt = torch.load(fusion_ckpt_path, map_location=self.device, weights_only=False)
             f_state = f_ckpt.get('model_state_dict', f_ckpt.get('state_dict', f_ckpt))
             # Load into gating_network and fusion layers only
             if hasattr(model, 'gating_network'):
@@ -527,3 +536,132 @@ class InferenceEngine:
             'enhancing_tumor': save_nifti(et,        'enhancing_tumor'),
             'full_segmentation': save_nifti(brats_mask, 'full_segmentation'),
         }
+
+    def _generate_slice_visualizations(
+        self,
+        brats_mask: np.ndarray,
+        volumes_np: Dict[str, np.ndarray],
+        case_id: str,
+        case_dir: Path,
+    ) -> list:
+        """
+        Generate 2D slice visualization PNGs using SliceVisualizer.
+
+        Produces overlay and standalone composite images for the axial plane
+        (the most clinically useful view). Uses T1ce as the MRI background
+        if available, otherwise falls back to the first available modality.
+
+        Args:
+            brats_mask:  BraTS-convention mask in (D, H, W) format
+            volumes_np:  Dict of modality → (H, W, D) numpy arrays
+            case_id:     Case UUID string
+            case_dir:    Path to case directory
+
+        Returns:
+            List of dicts: [{ plane, slice_index, url, has_overlay, filename }]
+        """
+        try:
+            from src.inference.slice_visualizer import SliceVisualizer
+        except ImportError as e:
+            logger.warning(f"Could not import SliceVisualizer: {e}. Skipping slice generation.")
+            return []
+
+        viz = SliceVisualizer()
+
+        # Pick display modality (T1ce preferred)
+        display_mod = 'T1ce' if 'T1ce' in volumes_np else next(iter(volumes_np))
+        mri_vol_hwz = volumes_np[display_mod]        # (H, W, D) — NIfTI native
+
+        # Permute both to (D, H, W) for SliceVisualizer consistency
+        mri_vol = np.transpose(mri_vol_hwz, (2, 0, 1))
+        mask_vol = brats_mask  # already (D, H, W) from sliding window output
+
+        # Output directory under Django media
+        slice_dir = Path(settings.MEDIA_ROOT) / 'cases' / str(case_id) / 'slices'
+        slice_dir.mkdir(parents=True, exist_ok=True)
+
+        slice_results = []
+
+        # Generate overlay composite (MRI + coloured masks)
+        try:
+            overlay_files = viz.generate_from_arrays(
+                mri_volume=mri_vol,
+                brats_mask=mask_vol,
+                output_dir=str(slice_dir),
+                plane='axial',
+                prefix=f'{case_id}_overlay',
+                save_individual=False,
+                save_composite=True,
+                overlay_mode=True,
+            )
+            if 'composite' in overlay_files:
+                rel_path = Path(overlay_files['composite']).relative_to(settings.MEDIA_ROOT)
+                fname = Path(overlay_files['composite']).name
+                best_slice = viz.find_best_slice(mask_vol, 'axial')
+                slice_results.append({
+                    'plane': 'axial',
+                    'slice_index': best_slice,
+                    'url': f'{settings.MEDIA_URL}{rel_path.as_posix()}',
+                    'has_overlay': True,
+                    'filename': fname,
+                })
+                logger.info(f"Saved overlay composite: {fname}")
+        except Exception as e:
+            logger.warning(f"Failed to generate overlay composite: {e}")
+
+        # Generate standalone composite (masks on black background)
+        try:
+            standalone_files = viz.generate_from_arrays(
+                mri_volume=mri_vol,
+                brats_mask=mask_vol,
+                output_dir=str(slice_dir),
+                plane='axial',
+                prefix=f'{case_id}_standalone',
+                save_individual=False,
+                save_composite=True,
+                overlay_mode=False,
+            )
+            if 'composite' in standalone_files:
+                rel_path = Path(standalone_files['composite']).relative_to(settings.MEDIA_ROOT)
+                fname = Path(standalone_files['composite']).name
+                best_slice = viz.find_best_slice(mask_vol, 'axial')
+                slice_results.append({
+                    'plane': 'axial',
+                    'slice_index': best_slice,
+                    'url': f'{settings.MEDIA_URL}{rel_path.as_posix()}',
+                    'has_overlay': False,
+                    'filename': fname,
+                })
+                logger.info(f"Saved standalone composite: {fname}")
+        except Exception as e:
+            logger.warning(f"Failed to generate standalone composite: {e}")
+
+        return slice_results
+
+    def _save_slice_records(
+        self,
+        seg_result,
+        slice_image_urls: list,
+        case_id: str,
+    ):
+        """Persist Slice2DVisualization DB records for generated slice images."""
+        from cases.models import Slice2DVisualization
+
+        # Clear any previous slice records for this segmentation result
+        Slice2DVisualization.objects.filter(segmentation_result=seg_result).delete()
+
+        for item in slice_image_urls:
+            try:
+                # image_file is relative to MEDIA_ROOT
+                rel_path = item['url'].replace(settings.MEDIA_URL, '', 1)
+                Slice2DVisualization.objects.create(
+                    segmentation_result=seg_result,
+                    plane=item['plane'],
+                    slice_index=item['slice_index'],
+                    image_file=rel_path,
+                    modality='t1ce',
+                    has_overlay=item['has_overlay'],
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save slice record: {e}")
+
