@@ -144,6 +144,10 @@ dmypy.json
 *.mhd
 *.mha
 
+# Allow test cases
+!data/Cases For Testing/**/*.nii
+!data/Cases For Testing/**/*.nii.gz
+
 # Large data files
 data/raw/
 data/processed/
