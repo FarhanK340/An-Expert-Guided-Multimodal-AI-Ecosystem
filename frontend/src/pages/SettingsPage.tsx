@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Lock, Building2, Stethoscope, Save, Phone } from 'lucide-react';
+import { User, Mail, Lock, Building2, Stethoscope, Save, Phone, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { apiService } from '../services/api';
@@ -18,8 +19,9 @@ interface FormErrors {
 }
 
 export default function SettingsPage() {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, logout } = useAuth();
     const { success, error: showError } = useNotification();
+    const navigate = useNavigate();
 
     const [profile, setProfile] = useState({
         firstName: '',
@@ -41,6 +43,11 @@ export default function SettingsPage() {
     const [passwordErrors, setPasswordErrors] = useState<FormErrors>({});
     const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
     const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+
+    // Account deletion state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Load user data when component mounts
     useEffect(() => {
@@ -177,6 +184,31 @@ export default function SettingsPage() {
             }
         } finally {
             setIsSubmittingPassword(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!deletePassword.trim()) {
+            showError('Password is required to delete your account');
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await apiService.deleteAccount(deletePassword);
+            success('Account deleted successfully. We\'re sorry to see you go.');
+            
+            // Close modal
+            setShowDeleteModal(false);
+            setDeletePassword('');
+            
+            // Logout and redirect
+            await logout();
+            navigate('/login');
+        } catch (err: any) {
+            showError(err.message || 'Failed to delete account. Please check your password.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -411,7 +443,77 @@ export default function SettingsPage() {
                         </form>
                     </div>
                 </div>
+
+                {/* Danger Zone */}
+                <div className="card card-danger">
+                    <div className="card-header">
+                        <h3>Danger Zone</h3>
+                    </div>
+                    <div className="card-body">
+                        <p className="danger-description">
+                            Once you delete your account, there is no going back. Please be certain.
+                            All of your personal data will be permanently wiped from our servers.
+                        </p>
+                        <button 
+                            className="btn btn-outline" 
+                            style={{ color: 'var(--error-600)', borderColor: 'var(--error-600)' }}
+                            onClick={() => setShowDeleteModal(true)}
+                        >
+                            <AlertTriangle size={18} />
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            {/* Delete Account Modal */}
+            {showDeleteModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3><AlertTriangle size={24} /> Delete Account</h3>
+                        <p>
+                            Are you absolutely sure you want to delete your account? This action cannot be undone.
+                            Please type your password to confirm.
+                        </p>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Password</label>
+                            <div className="input-wrapper">
+                                <Lock size={18} className="input-icon" />
+                                <input
+                                    type="password"
+                                    value={deletePassword}
+                                    onChange={(e) => setDeletePassword(e.target.value)}
+                                    placeholder="Enter your password"
+                                    className="input-with-icon"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button 
+                                className="btn btn-outline" 
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setDeletePassword('');
+                                }}
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                className="btn btn-primary" 
+                                style={{ backgroundColor: 'var(--error-600)', borderColor: 'var(--error-600)' }}
+                                onClick={handleDeleteAccount}
+                                disabled={isDeleting || !deletePassword}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
