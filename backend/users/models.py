@@ -45,7 +45,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     ROLE_CHOICES = [
         ('doctor', 'Doctor'),
-        ('radiologist', 'Radiologist'),
         ('researcher', 'Researcher'),
         ('patient', 'Patient'),
         ('admin', 'Administrator'),
@@ -121,7 +120,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_clinician(self):
         """Check if user is any clinical professional."""
-        return self.role in ('doctor', 'radiologist', 'researcher')
+        return self.role in ('doctor', 'researcher')
 
     @property
     def is_doctor(self):

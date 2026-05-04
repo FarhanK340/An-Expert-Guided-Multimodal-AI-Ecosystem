@@ -167,6 +167,8 @@ class ApiService {
                     body: JSON.stringify({ refresh: this.refreshToken }),
                 });
             }
+        } catch (error) {
+            console.warn('Backend logout failed (e.g., already deleted), clearing local tokens:', error);
         } finally {
             this.clearTokens();
         }
@@ -192,6 +194,13 @@ class ApiService {
                 newPassword,
                 confirmPassword,
             }),
+        });
+    }
+
+    async deleteAccount(password: string): Promise<{ message: string }> {
+        return await this.request('/users/profile/delete/', {
+            method: 'POST',
+            body: JSON.stringify({ password }),
         });
     }
 

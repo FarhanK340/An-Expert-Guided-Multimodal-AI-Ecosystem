@@ -235,3 +235,31 @@ class UserDetailView(APIView):
             return Response({
                 'error': 'User not found'
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class DeleteAccountView(APIView):
+    """Delete own account securely."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        password = request.data.get('password', '')
+        
+        if not password:
+            return Response(
+                {'error': 'Password is required to delete your account'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Verify password
+        if not request.user.check_password(password):
+            return Response(
+                {'error': 'Incorrect password'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        # Hard delete user (this cascades to cases and reports)
+        request.user.delete()
+        
+        return Response({
+            'message': 'Account deleted successfully'
+        }, status=status.HTTP_200_OK)

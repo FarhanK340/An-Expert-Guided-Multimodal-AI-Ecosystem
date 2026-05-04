@@ -186,7 +186,22 @@ export default function ReportDetailPage() {
                                 </div>
                             </>
                         ) : (
-                            <pre className="report-text">{report.finalizedText || report.aiGeneratedText}</pre>
+                            <div className="report-text" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                                {(report.finalizedText || report.aiGeneratedText || '').split('\n').map((line: string, i: number) => {
+                                    // Split by **text** and capture the match
+                                    const parts = line.split(/(\*\*.*?\*\*)/g);
+                                    return (
+                                        <div key={i} style={{ minHeight: '1.5em' }}>
+                                            {parts.map((part, j) => {
+                                                if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+                                                    return <strong key={j} style={{ fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+                                                }
+                                                return <span key={j}>{part}</span>;
+                                            })}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         )}
                     </div>
                 </div>

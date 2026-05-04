@@ -34,6 +34,7 @@ export default function PatientDashboardPage() {
         switch (status) {
             case 'final':
             case 'approved':
+            case 'reviewed':
                 return <CheckCircle size={16} className="status-icon status-done" />;
             case 'draft':
             case 'pending':
@@ -60,7 +61,7 @@ export default function PatientDashboardPage() {
         },
         {
             label: 'Finalised',
-            value: reports.filter(r => r.status === 'final' || r.status === 'approved').length,
+            value: reports.filter(r => r.status === 'final' || r.status === 'approved' || r.status === 'reviewed').length,
             icon: CheckCircle,
             color: 'success',
         },
@@ -136,13 +137,13 @@ export default function PatientDashboardPage() {
                                                 Brain MRI Analysis Report
                                             </p>
                                             <p className="report-meta">
-                                                {report.createdAt
-                                                    ? new Date(report.createdAt).toLocaleDateString('en-US', {
+                                                {report.generatedAt
+                                                    ? new Date(report.generatedAt).toLocaleDateString('en-US', {
                                                         year: 'numeric', month: 'long', day: 'numeric'
                                                     })
                                                     : 'Date unavailable'
                                                 }
-                                                {report.createdByName && ` · Dr. ${report.createdByName}`}
+                                                {report.lastEditedBy && ` · Dr. ${report.lastEditedBy}`}
                                             </p>
                                         </div>
                                     </div>

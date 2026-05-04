@@ -5,7 +5,9 @@ Implements the full pipeline: structured_findings → JSON descriptor → LLM �
 
 import json
 import io
+import re
 from datetime import datetime
+from django.utils.html import escape
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -100,6 +102,11 @@ class ReportListView(APIView):
     def get(self, request):
         if request.user.role == 'admin' or request.user.is_staff:
             reports = Report.objects.all().order_by('-generated_at')
+        elif request.user.role == 'patient':
+            # Show finalized/reviewed reports for cases linked to this patient
+            reports = Report.objects.filter(
+                case__patient_user=request.user
+            ).exclude(status='draft').order_by('-generated_at')
         else:
             # Show reports for cases created by this user
             reports = Report.objects.filter(
@@ -120,9 +127,14 @@ class ReportDetailView(APIView):
         except Report.DoesNotExist:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if (report.case.created_by != request.user
-                and not request.user.is_staff):
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.is_staff or request.user.role == 'admin':
+            pass
+        elif request.user.role == 'patient':
+            if report.case.patient_user != request.user or report.status == 'draft':
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            if report.case.created_by != request.user:
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ReportSerializer(report)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -188,8 +200,14 @@ class ExportPDFView(APIView):
         except Report.DoesNotExist:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if report.case.created_by != request.user and not request.user.is_staff:
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.is_staff or request.user.role == 'admin':
+            pass
+        elif request.user.role == 'patient':
+            if report.case.patient_user != request.user or report.status == 'draft':
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            if report.case.created_by != request.user:
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             pdf_bytes = self._generate_pdf(report)
@@ -292,14 +310,27 @@ class ExportPDFView(APIView):
         # Report narrative
         story.append(Paragraph("Radiological Report", styles['Heading2']))
         report_text = report.finalized_text or report.ai_generated_text or ''
+        
         for paragraph in report_text.split('\n\n'):
             paragraph = paragraph.strip()
-            if paragraph:
-                if paragraph.startswith('**') and paragraph.endswith('**'):
-                    story.append(Paragraph(paragraph.strip('*'), styles['Heading3']))
-                else:
-                    story.append(Paragraph(paragraph.replace('\n', '<br/>'), styles['Normal']))
-                story.append(Spacer(1, 0.2*cm))
+            if not paragraph:
+                continue
+                
+            # Handle headers: **Header Text** on its own line
+            if paragraph.startswith('**') and paragraph.endswith('**') and len(paragraph) > 4:
+                header_text = paragraph[2:-2].strip()
+                story.append(Paragraph(escape(header_text), styles['Heading3']))
+            else:
+                # Escape HTML special chars to prevent reportlab XML errors
+                processed_text = escape(paragraph)
+                # Convert markdown bold: **text** -> <b>text</b>
+                processed_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', processed_text)
+                # Convert markdown italic: *text* -> <i>text</i>
+                processed_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', processed_text)
+                
+                story.append(Paragraph(processed_text.replace('\n', '<br/>'), styles['Normal']))
+            
+            story.append(Spacer(1, 0.2*cm))
 
         doc.build(story)
         return buffer.getvalue()

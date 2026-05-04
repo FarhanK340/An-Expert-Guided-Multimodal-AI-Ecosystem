@@ -168,3 +168,120 @@ class TestRoleBasedAccess(AuthTestCase):
         self.auth_as(self.patient)
         resp = self.client.get('/api/users/users/')
         self.assertEqual(resp.status_code, 403)
+
+
+class TestLogout(AuthTestCase):
+    """Test logout and token blacklisting."""
+
+    def test_logout_returns_success(self):
+        login_resp = self.client.post('/api/users/login/', {
+            'email': 'doctor@test.com', 'password': 'TestPass123'
+        }, format='json')
+        access = login_resp.data['access']
+        refresh = login_resp.data['refresh']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        resp = self.client.post('/api/users/logout/', {
+            'refresh': refresh
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+
+
+class TestChangePassword(AuthTestCase):
+    """Test password change flow."""
+
+    def test_change_password_success(self):
+        self.auth_as(self.doctor)
+        resp = self.client.post('/api/users/profile/change-password/', {
+            'currentPassword': 'TestPass123',
+            'newPassword': 'NewPass456!',
+            'confirmPassword': 'NewPass456!'
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+
+        # Can login with new password
+        self.client.credentials()  # clear
+        resp = self.client.post('/api/users/login/', {
+            'email': 'doctor@test.com', 'password': 'NewPass456!'
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_change_password_wrong_current(self):
+        self.auth_as(self.doctor)
+        resp = self.client.post('/api/users/profile/change-password/', {
+            'currentPassword': 'WrongPassword',
+            'newPassword': 'NewPass456!',
+            'confirmPassword': 'NewPass456!'
+        }, format='json')
+        self.assertEqual(resp.status_code, 400)
+
+
+class TestDeleteAccount(AuthTestCase):
+    """Test account deletion with cascade."""
+
+    def test_delete_account_success(self):
+        self.auth_as(self.doctor)
+        resp = self.client.post('/api/users/profile/delete/', {
+            'password': 'TestPass123'
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(User.objects.filter(email='doctor@test.com').exists())
+
+    def test_delete_account_wrong_password(self):
+        self.auth_as(self.doctor)
+        resp = self.client.post('/api/users/profile/delete/', {
+            'password': 'WrongPassword'
+        }, format='json')
+        self.assertEqual(resp.status_code, 401)
+        self.assertTrue(User.objects.filter(email='doctor@test.com').exists())
+
+    def test_delete_account_no_password(self):
+        self.auth_as(self.doctor)
+        resp = self.client.post('/api/users/profile/delete/', {}, format='json')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_delete_account_cascades_cases(self):
+        from cases.models import Case
+        self.auth_as(self.doctor)
+        # Create a case first
+        self.client.post('/api/cases/', {
+            'patientId': 'PAT-CASCADE'
+        }, format='json')
+        self.assertTrue(Case.objects.filter(patient_id='PAT-CASCADE').exists())
+
+        # Delete account
+        self.client.post('/api/users/profile/delete/', {
+            'password': 'TestPass123'
+        }, format='json')
+        self.assertFalse(Case.objects.filter(patient_id='PAT-CASCADE').exists())
+
+
+class TestAdminUserManagement(AuthTestCase):
+    """Test admin-only user management."""
+
+    def test_admin_can_view_user_detail(self):
+        self.auth_as(self.admin)
+        resp = self.client.get(f'/api/users/users/{self.doctor.pk}/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['email'], 'doctor@test.com')
+
+    def test_admin_can_delete_user(self):
+        self.auth_as(self.admin)
+        resp = self.client.delete(f'/api/users/users/{self.researcher.pk}/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(User.objects.filter(email='researcher@test.com').exists())
+
+    def test_admin_can_update_user(self):
+        self.auth_as(self.admin)
+        resp = self.client.patch(f'/api/users/users/{self.doctor.pk}/', {
+            'specialty': 'Updated Specialty'
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_deactivated_user_cannot_login(self):
+        self.doctor.is_active = False
+        self.doctor.save()
+        resp = self.client.post('/api/users/login/', {
+            'email': 'doctor@test.com', 'password': 'TestPass123'
+        }, format='json')
+        self.assertEqual(resp.status_code, 401)
