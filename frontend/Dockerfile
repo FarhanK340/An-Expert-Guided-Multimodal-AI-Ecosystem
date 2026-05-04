@@ -16,7 +16,7 @@ WORKDIR /app
 
 # Cache npm install layer separately so it only re-runs when package files change
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy all source files
 COPY . .
