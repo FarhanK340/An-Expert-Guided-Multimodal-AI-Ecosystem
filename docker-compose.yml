@@ -54,15 +54,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: medical_ai_backend
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn medical_ai_backend.wsgi:application
-               --bind 0.0.0.0:8000
-               --workers 4
-               --timeout 600
-               --graceful-timeout 30
-               --keep-alive 5"
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn medical_ai_backend.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 600 --graceful-timeout 30 --keep-alive 5"
     volumes:
       - ./backend:/app
       # ML source code — REPO_ROOT is Path(BASE_DIR).parent = /
