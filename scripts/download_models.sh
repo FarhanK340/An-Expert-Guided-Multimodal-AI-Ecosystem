@@ -70,7 +70,7 @@ download_if_missing() {
     fi
 
     info "Downloading $label..."
-    gdown "https://drive.google.com/uc?id=${file_id}" -O "$dest" --fuzzy \
+    gdown "https://drive.google.com/uc?id=${file_id}" -O "$dest" \
         || error "Failed to download $label (id=$file_id). Check the file is shared publicly."
 }
 
