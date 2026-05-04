@@ -1,0 +1,292 @@
+\documentclass[12pt, a4paper]{report}
+
+% Packages for formatting
+\usepackage[left=1.5in, right=1.2in, top=1.2in, bottom=1.2in]{geometry} % Margins
+\usepackage{mathptmx} % Times New Roman Font
+\usepackage{setspace} % Line spacing
+\usepackage{titlesec} % Heading formats
+\usepackage{graphicx}
+\usepackage{tocloft}
+
+% 1.5 Spacing
+\onehalfspacing
+
+% Heading Styles
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\itshape\raggedleft}
+  {Chapter \thechapter}
+  {1ex}
+  {\huge\normalfont\bfseries\centering\MakeUppercase}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\MakeUppercase}{\thesection}{1em}{}
+  
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+% -------------------------------------------------------------------
+% TITLE PAGE
+% -------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1in}
+    
+    {\Huge \bfseries TITLE OF THE PROJECT\par}
+    
+    \vspace{1.5in}
+    
+    {\Large \bfseries Final Year Project Report \par}
+    \vspace{0.2in}
+    {\large by \par}
+    \vspace{0.2in}
+    {\large \bfseries Names \par}
+    
+    \vspace{1.5in}
+    
+    {\large In Partial Fulfillment \par}
+    {\large Of the Requirements for the degree \par}
+    {\large \bfseries Bachelors of Engineering in Software Engineering (BESE) \par}
+    
+    \vfill
+    
+    {\large \bfseries School of Electrical Engineering and Computer Science \par}
+    {\large \bfseries National University of Sciences and Technology \par}
+    {\large \bfseries Islamabad, Pakistan \par}
+    {\large \bfseries (2026) \par}
+    
+\end{titlepage}
+
+\pagenumbering{roman}
+
+% -------------------------------------------------------------------
+% DECLARATION
+% -------------------------------------------------------------------
+\chapter*{DECLARATION}
+\addcontentsline{toc}{chapter}{DECLARATION}
+We hereby declare that this project report entitled "TITLE" submitted to the "DEPARTMENT NAME", is a record of an original work done by us under the guidance of Supervisor "NAME" and that no part has been plagiarized without citations. Also, this project work is submitted in the partial fulfillment of the requirements for the degree of Bachelor of Engineering in Software Engineering.
+
+\vspace{1in}
+\noindent
+\begin{tabular}{@{}p{3in} p{3in}@{}}
+\textbf{Team Members} & \textbf{Signature} \\
+Name & \hrulefill \\
+Name & \hrulefill \\
+Name & \hrulefill \\
+Name & \hrulefill \\
+Name & \hrulefill \\
+\end{tabular}
+
+\vspace{1in}
+\noindent
+\begin{tabular}{@{}p{3in} p{3in}@{}}
+\textbf{Supervisor:} & \textbf{Signature} \\
+Supervisor Name & \hrulefill \\
+\end{tabular}
+
+\vspace{0.5in}
+\noindent
+\textbf{Date:} \\
+\textbf{Place:}
+
+\clearpage
+
+% -------------------------------------------------------------------
+% DEDICATION & ACKNOWLEDGEMENTS
+% -------------------------------------------------------------------
+\chapter*{DEDICATION}
+\addcontentsline{toc}{chapter}{DEDICATION}
+% Insert dedication text here
+
+\chapter*{ACKNOWLEDGEMENTS}
+\addcontentsline{toc}{chapter}{ACKNOWLEDGEMENTS}
+% Insert acknowledgements text here
+
+\clearpage
+
+% -------------------------------------------------------------------
+% LISTS
+% -------------------------------------------------------------------
+\tableofcontents
+\clearpage
+\listoffigures
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\clearpage
+\listoftables
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\clearpage
+
+% -------------------------------------------------------------------
+% ABSTRACT
+% -------------------------------------------------------------------
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+Include a brief summary of the problem statement, challenges, proposed solution, approaches, scope, and comparison with existing systems/evaluation methods, conclusion and future directions. Recommend length is 1 page maximum. Abstract must be self-explanatory and should not include any references or short hand notations in the abstract.
+
+\clearpage
+\pagenumbering{arabic}
+
+% -------------------------------------------------------------------
+% CHAPTER 1: INTRODUCTION
+% -------------------------------------------------------------------
+\chapter{INTRODUCTION}
+Introduction is mostly written for non-specialists so that they can get an overview of the project without technical details. It should provide a brief overview of the project aims and structure of the solution. It should also specify what \textbf{unmet need or problem the FYP caters for and who needs it.} 
+
+At the end of chapter, provide a summary of the report organization, chapter outlining what has been covered in this chapter and explain what comes in the following chapters. 
+
+\section{GENERAL FORMAT OF THESIS}
+Following is the generic format for the final documentation.
+\begin{enumerate}
+    \item Introduction
+    \item Literature Review
+    \item Problem Definition
+    \item Methodology/Solution Statement
+    \item Detailed Design and Architecture
+    \item Implementation and Testing
+    \item Results and Discussion
+    \item Conclusion and Future Work
+    \item References
+    \item Appendices (if any)
+\end{enumerate}
+
+\section{STYLES}
+\subsection{Typeface}
+Space of the text should be 1.5, Font. 12 Times New Roman (TNR), text must be justified.
+
+The first line of the paragraph should be indented and single line space be given between paragraphs. 
+\subsection{Margins}
+Left 1.5 inches. Right, Top, Lower 1.2 inches.
+\subsection{Headings}
+
+Chapter Number 16 TNR (Italics, Bold, Justified to the right, first letter in capital i.e. “C”)
+
+Chapter Heading 16 TNR (All capital, bold, adjusted in the center)
+
+The following headings should all be left aligned and text should begin from the next line with indentation.
+
+First Level Heading 14 TNR (All capital, bold)
+
+Second Level Heading 12 TNR (Bold, First letter of each main word in capital) 
+
+Third Level Heading 12 TNR (Bold, Only first letter of first word in capital) 
+
+\section{TABLES AND FIGURES}
+Every table must bear a title and table number which should be written on the top of the table (Table 1: Abc)
+
+Titles of the figures should be written under the figures, along with the figure
+number (Figure 1: Xyz) 
+
+\section{REFERENCES}
+\subsection{Journals}
+Author Name/s (Surname, initial), year of publication in-parenthesis, title of the article, name of the journal, volume number, issue number (in parenthesis) followed by a colon and page numbers 
+\subsection{Books}
+Author Name/s (Surname, initial), year of publication in-parenthesis, title of the book, publisher’s name, place of publication, page numbers
+\subsection{Reference from Internet}
+Name of the Author/s (If Known), Title of the topic followed by complete web address
+
+% -------------------------------------------------------------------
+% CHAPTER 2: LITERATURE REVIEW
+% -------------------------------------------------------------------
+\chapter{LITERATURE REVIEW}
+Provide an overview to the projects background knowledge without too much in detail (stick to the scope of the project). The background can refer to previous work referenced from journals, articles, newspapers, or any academic literature providing evidence that the proposed problem is significant and real problem worth solving.
+
+If available, provide closely related work done within the project scope and the challengesor defects identified which can be considered as part of the new solution.
+
+Describe why you worked on this project in light of the literature review?
+% -------------------------------------------------------------------
+% CHAPTER 3: PROBLEM DEFINITION
+% -------------------------------------------------------------------
+\chapter{PROBLEM DEFINITION}
+% Insert problem definition here
+
+% -------------------------------------------------------------------
+% CHAPTER 4: METHODOLOGY
+% -------------------------------------------------------------------
+\chapter{METHODOLOGY}
+The methods, approaches, tools, techniques, algorithms, or other aspects of the solution are sufficiently discussed with sufficient details and supporting figures.
+
+% -------------------------------------------------------------------
+% CHAPTER 5: DETAILED DESIGN AND ARCHITECTURE
+% -------------------------------------------------------------------
+\chapter{DETAILED DESIGN AND ARCHITECTURE}
+
+\section{SYSTEM ARCHITECTURE}
+This section should provide a high-level overview of how the functionality and
+responsibilities of the system were partitioned and then assigned to subsystems or components.
+
+Don't go into too much detail about the individual components themselves (there is a subsequent section for detailed component descriptions). The main purpose here is to gain a general understanding of how and why the system was decomposed, and how the individual parts work together to provide the desired functionality.
+
+At the top-most level, describe the major responsibilities that the software must undertake and the various roles that the system (or portions of the system) must play. Describe how the system was broken down into its components/subsystems (identifying each top-level component/subsystem and the roles/responsibilities assigned to it). Describe how the higher-level components collaborate with each other in order to achieve the required results. Don't forget to provide some sort of rationale for choosing this particular decomposition of the system (perhaps discussing other proposed decompositions and why they were rejected). Feel free to make use of design patterns, either in describing parts of the architecture (in pattern format), or for referring to elements of the architecture that employ them.
+
+If there are any diagrams, models, flowcharts, documented scenarios or use-cases of the system behavior and/or structure, they may be included here (unless you feel they are complex enough to merit being placed in the Detailed System Design section). Diagrams that describe a particular component or subsystem should be included within the particular subsection that describes that component or subsystem. 
+\subsection{Architecture Design Approach}
+Describe the architectural design approach. 
+\subsection{Architecture Design}
+Provide and describe a figure that depicts the overall system architecture. Develop a modular program structure and explain the relationships between the modules to achieve the complete functionality of the system. This is a high level overview of how responsibilities of the system were partitioned and then assigned to subsystems. Identify each high level subsystem and the roles or responsibilities assigned to it. Describe how these subsystems collaborate with each other in order to achieve the desired functionality. Don’t go into too much detail about the individual subsystems. The main purpose is to gain a general understanding of how and why the system was decomposed, and how the individual parts work together. Provide a diagram showing the major subsystems and data repositories and their interconnections. Describe the diagram if required. 
+\subsection{Subsystem Architecture}
+Provide a decomposition of the subsystems in the architectural design. Supplement with text as needed. You may choose to give a functional description or an object oriented description.
+
+For a functional description, put top level data flow diagram (DFD) and structural decomposition diagrams. For an OO description, put subsystem model, object diagrams, generalization hierarchy diagram(s) (if any), aggregation hierarchy diagram(s) (if any), interface specifications, and sequence diagrams here. 
+
+\section{DETAILED SYSTEM DESIGN}
+Most components described in the System Architecture section will require a more detailed discussion. Other lower-level components and subcomponents may need to be described as well. Each subsection of this section will refer to or contain a detailed description of a system software component. The discussion provided should cover the following software component attributes: 
+\subsection{Classification}
+The kind of component, such as a subsystem, module, class, package, function, file, etc. 
+\subsection{Definition}
+The specific purpose and semantic meaning of the component. This may need to refer back to the requirements specification. 
+\subsection{Responsibilities}
+The primary responsibilities and/or behavior of this component. What does this
+component accomplish? What roles does it play? What kinds of services does it provide to its clients? For some components, this may need to refer back to the requirements specification. 
+\subsection{Constraints}
+Any relevant assumptions, limitations, or constraints for this component. This should include constraints on timing, storage, or component state, and might include rules for interacting with this component (encompassing preconditions, post conditions, invariants, other constraints on input or output values and local or global values, data formats and data access, synchronization, exceptions, etc.) 
+\subsection{Composition}
+A description of the use and meaning of the subcomponents which are a part of this component. 
+\subsection{Uses/Interactions}
+Description of component collaboration with other components. What other components is this entity used by? What other components does this entity use (this would include any side-effects this entity might have on other parts of the system)? This concerns the method of interaction as well as the interaction itself. Object-oriented designs should include a description of any known or anticipated subclasses, super classes, and meta classes. 
+\subsection{Resources}
+A description of any and all resources that are managed, affected, or needed by this entity. Resources are entities external to the design such as memory, processors, printers, databases, or a software library. This should include a discussion of any possible race conditions and/or deadlock situations, and how they might be resolved. 
+\subsection{Processing}
+A description of precisely how this components goes about performing the duties necessary to fulfill its responsibilities. This should encompass a description of any algorithms used; changes of state; relevant time or space complexity; concurrency; methods of creation, initialization, and cleanup; and handling of exceptional conditions. 
+\subsection{Interface/Exports}
+The set of services (resources, data, types, constants, subroutines, and exceptions) that are provided by this component. The precise definition or declaration of each such element should be present, along with comments or annotations describing the meanings of values, parameters, etc. .... For each service element described, include (or provide a reference) in its discussion a description of its important software component attributes (Classification, Definition, Responsibilities, Constraints, Composition, Uses, Resources, Processing, and Interface). 
+
+Much of the information that appears in this section is not necessarily expected to be kept separate from the source code. In fact, much of the information can be gleaned from the source itself (especially if it is adequately commented). This section should not copy or reproduce information that can be easily obtained from reading the source code (this would be an unwanted and unnecessary duplication of effort and would be very difficult to keep up-to-date). It is recommended that most of this information be contained in the source (with appropriate comments for each component, subsystem, module, and subroutine). Hence, it is expected that this section will largely consist of references to or excerpts of annotated diagrams and source code. Any referenced diagrams or source code excerpts should be provided at any design reviews.
+\subsection{Detailed Subsystem Design}
+Provide a detailed description of this software component (or a reference to such a description). Complex diagrams showing the details of component structure, behavior, or information/control flow may be included in the subsection devoted to that particular component (although, unless they are very large or complex, some of these diagrams might be more appropriately included in the System Architecture section. The description should cover any applicable software component attributes (some of which may be adequately described solely by a source code declaration or excerpt). 
+
+\section{CLASS DIAGRAM}
+\section{ER DIAGRAM}
+
+% -------------------------------------------------------------------
+% CHAPTER 6: IMPLEMENTATION AND TESTING
+% -------------------------------------------------------------------
+\chapter{IMPLEMENTATION AND TESTING}
+Explain the methods, tools and techniques used to develop the software. What kind of software and testing methodologies implemented. Explain core functionalities in narrative format. Controlled libraries, templates, code walkthroughs, 
+
+Explain how the proposed software has been evaluated and compared at runtime with the original specifications. The Accuracy, Performance and Scalability of the proposed software must be critically analyzed and should solve identified problem statement. 
+% -------------------------------------------------------------------
+% CHAPTER 7: RESULTS AND DISCUSSION
+% -------------------------------------------------------------------
+\chapter{RESULTS AND DISCUSSION}
+A comprehensive evaluation of the solution is presented with supporting figures and graphics.
+System testing is performed through a strong testing strategy and the test cases cover all the use cases. 
+
+% -------------------------------------------------------------------
+% CHAPTER 8: CONCLUSION AND FUTURE WORK
+% -------------------------------------------------------------------
+\chapter{CONCLUSION AND FUTURE WORK}
+Include a brief summary of how the proposed solution is going to/has addressed the problem statement specified in the introduction section. Provide an overview of what kind of evaluations were undertaken in order to prove that the solution really solves the problem with evidence on results findings.
+
+Provide an overview of the recommendations and Include a future directions which is required as part of the future work. 
+
+% -------------------------------------------------------------------
+% CHAPTER 9: REFERENCES
+% -------------------------------------------------------------------
+\chapter{REFERENCES}
+A comprehensive list of references is cited using a standard format.
+
+\end{document}

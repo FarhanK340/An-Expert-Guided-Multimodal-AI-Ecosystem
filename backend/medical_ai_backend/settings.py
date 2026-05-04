@@ -19,7 +19,20 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
+# Detect if running on Hugging Face Spaces
+IS_HF_SPACE = config('HF_SPACE', default=False, cast=bool)
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+if IS_HF_SPACE:
+    # Allow all Hugging Face subdomains
+    ALLOWED_HOSTS.append('.hf.space')
+    ALLOWED_HOSTS.append('0.0.0.0')
+
+# CSRF Settings for HF
+if IS_HF_SPACE:
+    CSRF_TRUSTED_ORIGINS = ['https://*.hf.space']
+else:
+    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -79,14 +92,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'medical_ai_backend.wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        config('DATABASE_URL', default='sqlite:///db.sqlite3'),
-        conn_max_age=600
-    )
-}
+if IS_HF_SPACE:
+    # Use SQLite for Hugging Face Spaces (single container limit)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=config('DATABASE_URL', default=f"postgresql://{config('DB_USER', default='postgres')}:{config('DB_PASSWORD', default='postgres')}@{config('DB_HOST', default='db')}:{config('DB_PORT', default='5432')}/{config('DB_NAME', default='medical_ai_db')}")
+        )
+    }
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
@@ -124,6 +145,23 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ── Cloud Storage (AWS S3) ─────────────────────────────────────────────────
+# Activated in production by setting USE_CLOUD_STORAGE=True in .env
+# All Django FileField uploads are transparently redirected to S3.
+if config('USE_CLOUD_STORAGE', default=False, cast=bool):
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+    AWS_S3_FILE_OVERWRITE = False          # don't clobber files with the same name
+    AWS_DEFAULT_ACL = 'private'            # files are private by default
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    # Override MEDIA_URL so file URLs point to S3
+    MEDIA_URL = f'https://{config("AWS_STORAGE_BUCKET_NAME", default="")}.s3.amazonaws.com/'
 
 # File upload settings
 DATA_UPLOAD_MAX_MEMORY_SIZE = config('MAX_UPLOAD_SIZE', default=1073741824, cast=int)  # 1GB
@@ -217,15 +255,31 @@ CELERY_TASK_TIME_LIMIT = config('INFERENCE_TIMEOUT', default=300, cast=int)
 CELERY_RESULT_BACKEND_DB = 'django-db'
 
 # Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+if IS_HF_SPACE:
+    # Use Local Memory Cache for Hugging Face
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
     }
-}
+else:
+    try:
+        import django_redis  # noqa: F401
+        CACHES = {
+            'default': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                }
+            }
+        }
+    except ImportError:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            }
+        }
 
 #Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

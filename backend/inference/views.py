@@ -16,17 +16,25 @@ from .inference_utils import InferenceEngine
 
 
 class PredictSegmentationView(APIView):
-    """Run segmentation prediction on a case."""
+    """Run segmentation prediction on a case (async via Celery)."""
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request, case_id):
         """
         POST /api/inference/predict/<case_id>/
-        
-        Starts segmentation prediction for the specified case.
+
+        Dispatches segmentation to a Celery worker and returns HTTP 202
+        immediately. The client should poll GET /api/inference/result/<case_id>/
+        until the case status changes from 'processing' to 'completed' or 'failed'.
+
+        Falls back to synchronous execution when Celery/Redis is unavailable
+        (e.g. local dev without docker).
         """
+        import logging
+        log = logging.getLogger(__name__)
+
         try:
-            # Verify case exists and belongs to user
+            # ── 1. Fetch & authorise ──────────────────────────────────────────
             try:
                 case = Case.objects.get(case_id=case_id)
             except Case.DoesNotExist:
@@ -34,19 +42,14 @@ class PredictSegmentationView(APIView):
                     {'error': 'Case not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            
-            # Check if user has permission (either owner or admin)
+
             if case.created_by != request.user and not request.user.is_staff:
                 return Response(
                     {'error': 'Permission denied'},
                     status=status.HTTP_403_FORBIDDEN
                 )
-            
-            # Update case status
-            case.status = 'processing'
-            case.save()
-            
-            # Resolve case_dir from the uploaded MRI images
+
+            # ── 2. Verify uploaded files exist ────────────────────────────────
             from cases.models import MRIImage
             mri_images = MRIImage.objects.filter(case=case)
             if not mri_images.exists():
@@ -55,12 +58,9 @@ class PredictSegmentationView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # case_dir is the parent of the first uploaded file
             media_root = Path(settings.MEDIA_ROOT)
             first_image = mri_images.first()
-            # file_path is a Django FileField — use .name to get the string path
-            first_path_str = first_image.file_path.name  # relative to MEDIA_ROOT
-            first_abs = media_root / first_path_str
+            first_abs = media_root / first_image.file_path.name
             case_dir = first_abs.parent
 
             if not case_dir.exists():
@@ -69,55 +69,69 @@ class PredictSegmentationView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Run the MoME+ inference engine
-            engine = InferenceEngine()
-            result = engine.run_inference(str(case_id), case_dir)
+            # ── 3. Mark as processing ─────────────────────────────────────────
+            case.status = 'processing'
+            case.save(update_fields=['status'])
 
-            return Response({
-                'message': 'Segmentation completed successfully',
-                'result': {
-                    'volumes': result['volumes'],
-                    'confidence_scores': result['confidence_scores'],
-                    'gating_weights': result.get('gating_weights', {}),
-                    'available_modalities': list(result.get('mask_files', {}).keys()),
-                }
-            }, status=status.HTTP_200_OK)
-            
+            # ── 4. Try async via Celery ───────────────────────────────────────
+            try:
+                from .tasks import run_segmentation_task
+                task = run_segmentation_task.delay(str(case_id), str(case_dir))
+                case.celery_task_id = task.id
+                case.save(update_fields=['celery_task_id'])
+                log.info(f"Segmentation task queued: task_id={task.id} case={case_id}")
+                return Response(
+                    {
+                        'message': 'Segmentation queued. Poll /api/inference/result/<case_id>/ for status.',
+                        'task_id': task.id,
+                        'status': 'queued',
+                    },
+                    status=status.HTTP_202_ACCEPTED,
+                )
+
+            except Exception as celery_exc:
+                # ── 5. Synchronous fallback (dev / no-Redis environments) ─────
+                log.warning(
+                    f"Celery unavailable ({celery_exc}), running inference synchronously. "
+                    "This will block the request thread."
+                )
+                engine = InferenceEngine()
+                result = engine.run_inference(str(case_id), case_dir)
+                return Response(
+                    {
+                        'message': 'Segmentation completed successfully',
+                        'result': {
+                            'volumes':              result['volumes'],
+                            'confidence_scores':    result['confidence_scores'],
+                            'gating_weights':       result.get('gating_weights', {}),
+                            'available_modalities': list(result.get('mask_files', {}).keys()),
+                        },
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
         except FileNotFoundError as e:
             case.status = 'failed'
             case.error_message = str(e)
-            case.save()
-            
-            # Log full traceback for debugging
+            case.save(update_fields=['status', 'error_message'])
             print("FileNotFoundError during inference:", traceback.format_exc())
-            
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         except ValueError as e:
             case.status = 'failed'
             case.error_message = str(e)
-            case.save()
-            
-            # Log full traceback for debugging
+            case.save(update_fields=['status', 'error_message'])
             print("ValueError during inference:", traceback.format_exc())
-            
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             case.status = 'failed'
             case.error_message = str(e)
-            case.save()
-            
-            # Log full traceback for debugging
+            case.save(update_fields=['status', 'error_message'])
             print("Inference error:", traceback.format_exc())
-            
             return Response(
                 {'error': f'Inference failed: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 

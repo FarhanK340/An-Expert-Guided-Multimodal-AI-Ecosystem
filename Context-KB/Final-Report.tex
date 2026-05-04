@@ -1,0 +1,294 @@
+\documentclass[12pt, a4paper]{report}
+
+% Packages for formatting
+\usepackage[left=1.5in, right=1.2in, top=1.2in, bottom=1.2in]{geometry} % Margins
+\usepackage{mathptmx} % Times New Roman Font
+\usepackage{setspace} % Line spacing
+\usepackage{titlesec} % Heading formats
+\usepackage{graphicx}
+\usepackage{tocloft}
+
+% 1.5 Spacing
+\onehalfspacing
+
+% Heading Styles
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\itshape\raggedleft}
+  {Chapter \thechapter}
+  {1ex}
+  {\huge\normalfont\bfseries\centering\MakeUppercase}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\MakeUppercase}{\thesection}{1em}{}
+  
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+% -------------------------------------------------------------------
+% TITLE PAGE
+% -------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1in}
+    
+    {\Huge \bfseries AN EXPERT-GUIDED MULTIMODAL AI ECOSYSTEM FOR BRAIN TUMOR SEGMENTATION\par}
+    
+    \vspace{1.5in}
+    
+    {\Large \bfseries Final Year Project Report \par}
+    \vspace{0.2in}
+    {\large by \par}
+    \vspace{0.2in}
+    {\large \bfseries Farhan Kashif \par}
+    {\large \bfseries Ahmed Sultan \par}
+    
+    \vspace{1.5in}
+    
+    {\large In Partial Fulfillment \par}
+    {\large Of the Requirements for the degree \par}
+    {\large \bfseries Bachelors of Engineering in Software Engineering (BESE) \par}
+    
+    \vfill
+    
+    {\large \bfseries School of Electrical Engineering and Computer Science \par}
+    {\large \bfseries National University of Sciences and Technology \par}
+    {\large \bfseries Islamabad, Pakistan \par}
+    {\large \bfseries (2026) \par}
+    
+\end{titlepage}
+
+\pagenumbering{roman}
+
+% -------------------------------------------------------------------
+% DECLARATION
+% -------------------------------------------------------------------
+\chapter*{DECLARATION}
+\addcontentsline{toc}{chapter}{DECLARATION}
+We hereby declare that this project report entitled "An Expert-Guided Multimodal AI Ecosystem for Brain Tumor Segmentation" submitted to the School of Electrical Engineering and Computer Science (SEECS), is a record of an original work done by us under the guidance of our supervisor, and that no part has been plagiarized without citations. Also, this project work is submitted in the partial fulfillment of the requirements for the degree of Bachelor of Engineering in Software Engineering.
+
+\vspace{1in}
+\noindent
+\begin{tabular}{@{}p{3in} p{3in}@{}}
+\textbf{Team Members} & \textbf{Signature} \\
+Farhan Kashif & \hrulefill \\
+Ahmed Sultan & \hrulefill \\
+\end{tabular}
+
+\vspace{1in}
+\noindent
+\begin{tabular}{@{}p{3in} p{3in}@{}}
+\textbf{Supervisor:} & \textbf{Signature} \\
+Dr. Muhammad Moazam Fraz & \hrulefill \\
+\end{tabular}
+
+\vspace{0.5in}
+\noindent
+\textbf{Date:} \today \\
+\textbf{Place:} NUST, Islamabad
+
+\clearpage
+
+% -------------------------------------------------------------------
+% DEDICATION & ACKNOWLEDGEMENTS
+% -------------------------------------------------------------------
+\chapter*{DEDICATION}
+\addcontentsline{toc}{chapter}{DEDICATION}
+We dedicate this project to our parents and families, whose endless support and encouragement have been the bedrock of our academic journey. We also dedicate this work to the medical professionals and researchers striving to improve patient care through technological innovation.
+
+\chapter*{ACKNOWLEDGEMENTS}
+\addcontentsline{toc}{chapter}{ACKNOWLEDGEMENTS}
+First and foremost, we express our profound gratitude to our supervisor, Dr. Muhammad Moazam Fraz, for his invaluable guidance, continuous support, and insightful feedback throughout this project. We would also like to thank Dr. Muhammad Naseer Bajwa for his valuable inputs. 
+
+We extend our sincere thanks to the School of Electrical Engineering and Computer Science (SEECS), NUST, for providing us with the necessary resources and environment to conduct our research. Lastly, we are grateful to our friends and colleagues who offered their assistance and encouragement during the challenging phases of this endeavor.
+
+\clearpage
+
+% -------------------------------------------------------------------
+% LISTS
+% -------------------------------------------------------------------
+\tableofcontents
+\clearpage
+\listoffigures
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\clearpage
+\listoftables
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\clearpage
+
+% -------------------------------------------------------------------
+% ABSTRACT
+% -------------------------------------------------------------------
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+The integration of Artificial Intelligence (AI) in medical imaging holds immense potential for improving diagnostic accuracy and efficiency. However, deploying such systems in clinical environments presents significant challenges, primarily concerning model adaptability, interpretability, and the generation of structured, actionable outputs. This Final Year Project presents a comprehensive, continually learning ecosystem for automated brain tumor diagnosis from multi-modal Magnetic Resonance Imaging (MRI) scans. 
+
+The proposed solution addresses the core requirements of clinical deployment through three integrated modules. First, we introduce an enhanced Mixture of Modality Experts (MoME+) architecture, which employs independent 3D U-Net experts for each MRI modality (T1, T1ce, T2, FLAIR) fused via a hierarchical gating network. This structure, augmented with Elastic Weight Consolidation (EWC) and experience replay, enables continual learning and adaptation to new tasks without catastrophic forgetting. Second, to ensure interpretability and auditability, we implement a deterministic registration pipeline that maps segmentation outputs to the Harvard-Oxford brain atlas, providing precise anatomical localization. Finally, the system translates these verifiable anatomical findings into a structured JSON representation, which drives a fine-tuned Large Language Model (MedGemma) to generate hallucination-free, clinical-grade radiology reports. 
+
+Evaluated on the BraTS 2024 dataset, the MoME+ fusion network achieved a mean Dice score of 0.8150, outperforming individual modality experts. The report generation module produced highly accurate reports with zero hallucination, demonstrating strong qualitative performance (BLEU-4: 44.73). Delivered through a full-stack, secure clinical dashboard, this ecosystem bridges the gap between raw pixel segmentation and structured clinical reporting, offering a practical, auditable, and adaptive tool for medical imaging diagnostics.
+
+\clearpage
+\pagenumbering{arabic}
+
+% -------------------------------------------------------------------
+% CHAPTER 1: INTRODUCTION
+% -------------------------------------------------------------------
+\chapter{INTRODUCTION}
+Autonomous medical systems such as surgical robots, AI-guided treatment planners, and telemedicine platforms require diagnostic modules that are adaptive, interpretable, and structured. Artificial Intelligence (AI) integration into medical systems demands diagnostic perception modules that go beyond raw segmentation performance. Such systems must operate continuously under evolving clinical protocols, produce interpretable and certifiable outputs, and interface with downstream automation components through structured, machine-readable representations.
+
+Brain tumor segmentation on multi-modal MRI is a natural testbed for this class of system. Each MRI sequence (T1, T1ce, T2, FLAIR) captures a different aspect of tissue pathophysiology: gadolinium-enhanced T1 demarcates active tumor, FLAIR reveals peritumoral edema, and T2 tracks gross extent. While recent models like U-Net and UNETR have established strong baselines, deploying such models in clinical workflows exposes unresolved challenges related to adaptation, interpretability, and downstream integration.
+
+\section{PROBLEM STATEMENT}
+Current AI-based medical imaging systems suffer from three major limitations: (1) static models that deteriorate under distribution shifts and lack continual learning capabilities; (2) black-box segmentation outputs lacking the explicit anatomical grounding required for regulatory auditability; and (3) a lack of structured machine-readable interfaces to connect pixel-level predictions to clinical text generation without the risk of AI hallucination. This project aims to address these limitations by developing an end-to-end, continually learning ecosystem that maps raw MRI scans to verifiable, structured clinical reports.
+
+\section{PROJECT SCOPE}
+The scope of this Final Year Project encompasses:
+\begin{enumerate}
+    \item Development of an enhanced Mixture of Modality Experts (MoME+) model for multi-modal brain tumor segmentation.
+    \item Implementation of a Continual Learning framework using Elastic Weight Consolidation (EWC) and experience replay.
+    \item Design of an anatomical mapping pipeline to map tumor voxels to standard brain atlases (e.g., Harvard-Oxford).
+    \item Creation of a deterministic JSON-mediated interface to translate spatial findings into clinical facts.
+    \item Fine-tuning of a Large Language Model (MedGemma) to generate reliable, hallucination-free radiology reports from the JSON descriptors.
+    \item Development of a full-stack web dashboard to integrate and visualize the end-to-end clinical workflow.
+\end{enumerate}
+
+\section{REPORT ORGANIZATION}
+The remainder of this report is organized as follows:
+Chapter 2 reviews the relevant literature on medical image segmentation, continual learning, and automated report generation.
+Chapter 3 formally defines the problem and system constraints.
+Chapter 4 details the methodology, explaining the MoME+ architecture, atlas mapping, and the JSON-to-text pipeline.
+Chapter 5 presents the detailed system design and architecture, outlining the full-stack dashboard and database schema.
+Chapter 6 covers the implementation specifics and testing strategies employed.
+Chapter 7 discusses the experimental results, evaluating both segmentation and report generation performance.
+Finally, Chapter 8 concludes the report and highlights potential future directions.
+
+% -------------------------------------------------------------------
+% CHAPTER 2: LITERATURE REVIEW
+% -------------------------------------------------------------------
+\chapter{LITERATURE REVIEW}
+
+\section{MULTIMODAL BRAIN TUMOR SEGMENTATION}
+The U-Net architecture and its 3D volumetric variants remain the standard backbone for medical image segmentation. The self-adapting nnU-Net showed that systematic hyperparameter configuration significantly outperforms manual tuning across diverse datasets. Transformer-based architectures like UNETR and Swin UNETR introduced global self-attention into volumetric segmentation, achieving state-of-the-art results on datasets like BraTS 2024.
+
+Most multimodal pipelines fuse all MRI sequences by channel-concatenation, treating each contrast symmetrically. This ignores the clinical reality that different sequences serve different diagnostic roles. The MoME (Mixture of Modality Experts) architecture broke from this convention by training separate encoder-decoder experts per modality and combining their feature hierarchies via a spatial gating network, naturally compartmentalizing knowledge by modality and allowing individual experts to be trained or updated in isolation.
+
+\section{CONTINUAL LEARNING FOR MEDICAL SYSTEMS}
+Continual learning matters for any system that must stay useful across scanner upgrades and evolving clinical protocols. Neural networks typically suffer from catastrophic forgetting when trained on new tasks. Elastic Weight Consolidation (EWC) addresses this by anchoring critical weights via Fisher Information, while experience replay complements this with a small stored buffer of past examples. Recent surveys confirm that combining both strategies is preferable for medical imaging, where domain gaps between tasks are large.
+
+\section{AUTOMATED REPORT GENERATION}
+Early report generation systems used rigid templates, which were reliable but inflexible. Neural encoder-decoder models improved fluency but introduced hallucination risk, producing clinically plausible statements unsupported by imaging findings. Foundation models like Med-Gemini show strong clinical reasoning yet remain susceptible to the same failure mode, which is a hard blocker for autonomous clinical deployment. This highlights the need for deterministic, fact-grounded intermediate representations to ensure safe human-machine collaboration.
+% -------------------------------------------------------------------
+% CHAPTER 3: PROBLEM DEFINITION
+% -------------------------------------------------------------------
+\chapter{PROBLEM DEFINITION}
+The core problem addressed by this project is the lack of a reliable, certifiable, and adaptable pipeline connecting raw medical imaging data to actionable clinical insights. Existing deep learning models output raw segmentation masks, which are uninterpretable to automated downstream clinical systems and insufficient for regulatory auditability. Furthermore, current models are static; they cannot learn continuously from new data without forgetting past knowledge. Finally, direct image-to-text generative models suffer from dangerous factual hallucinations. 
+
+To solve this, the project defines the need for a modular AI ecosystem capable of:
+1. Accurately segmenting multi-modal brain MRIs using expert networks.
+2. Incrementally learning new pathologies or imaging protocols safely.
+3. Translating spatial segmentation data into explicit, auditable anatomical facts.
+4. Generating clinical reports deterministically grounded in these verifiable facts, eliminating AI hallucination.
+
+% -------------------------------------------------------------------
+% CHAPTER 4: METHODOLOGY
+% -------------------------------------------------------------------
+\chapter{METHODOLOGY}
+Our pipeline consists of three core modules operating in sequence: a modular segmentation system, a deterministic anatomical mapping engine, and a structured JSON-to-report generation layer.
+
+\section{MODULAR SEGMENTATION: MOME+}
+The segmentation backbone consists of four modality-specific expert networks ($E_{T1}$, $E_{T1ce}$, $E_{T2}$, $E_{FLAIR}$). Each expert is an independent 3D U-Net featuring Convolutional Block Attention Module (CBAM) in the encoder and Squeeze-and-Excitation (SE) blocks in skip connections. The training follows a two-stage protocol:
+1. \textbf{Independent Pre-Training:} Each expert is trained independently on single-modality crops using a combined soft Dice and cross-entropy loss.
+2. \textbf{Gating Network Fusion:} Expert weights are frozen, and a hierarchical gating network is trained to optimally combine the four expert outputs based on input quality. The final prediction is a weighted sum of the expert probability maps.
+
+For continual learning, Elastic Weight Consolidation (EWC) and an experience replay buffer (2,000 crops) are employed. This allows selective expert adaptation---e.g., updating only the T1ce expert for a new pathology without forgetting previous tasks.
+
+\section{ANATOMICAL MAPPING}
+To provide certifiable, reproducible anatomical localization, we map the segmentation outputs to the Harvard-Oxford brain atlas. Patient MRI scans are registered to the MNI152 standard space via a 12-parameter affine transformation. The segmentation mask is then transformed and overlaid onto the atlas to quantify the region-wise overlap for each tumor component (Enhancing Tumor, Tumor Core, Whole Tumor). This provides deterministic spatial provenance for all automated decisions.
+
+\section{STRUCTURED JSON AND REPORT GENERATION}
+The anatomical analysis is encoded into a hierarchical JSON schema. This schema serves as a traceable human-machine interface containing patient metadata, volumetric analysis, and regional overlap percentages. A fine-tuned Large Language Model (MedGemma-4B using LoRA) and a deterministic template engine consume this JSON to generate structured radiology reports. Because every claim in the report maps directly back to the JSON (and thus to the original voxels), the system effectively neutralizes the risk of AI hallucination, making it suitable for clinical integration.
+
+% -------------------------------------------------------------------
+% CHAPTER 5: DETAILED DESIGN AND ARCHITECTURE
+% -------------------------------------------------------------------
+\chapter{DETAILED DESIGN AND ARCHITECTURE}
+
+\section{SYSTEM ARCHITECTURE}
+The ecosystem follows a layered, microservices-inspired architecture designed for scalability and clinical deployment. It consists of four main tiers:
+\begin{enumerate}
+    \item \textbf{Presentation Layer:} A full-stack web dashboard built with React and TypeScript, providing an intuitive clinical interface. It includes a 3D MRI viewer for interactive inspection of the uploaded scans and generated segmentations.
+    \item \textbf{Application Layer:} A Django REST Framework backend orchestrates the workflow. It handles secure user authentication via JWT, manages the case lifecycle, and triggers asynchronous machine learning jobs via Celery and Redis.
+    \item \textbf{Domain Layer:} The core ML pipeline built on PyTorch. This includes the MoME+ segmentation model, the deterministic atlas mapping module, and the LLM-based report generator.
+    \item \textbf{Data Layer:} A PostgreSQL database for relational data (users, cases, reports) and object storage for heavy NIfTI files and generated PDFs.
+\end{enumerate}
+
+\section{DATA PIPELINE AND WORKFLOW}
+When a clinician uploads a multi-modal MRI study (T1, T1ce, T2, FLAIR), the backend validates the files and dispatches an asynchronous task to the Celery worker pool. The worker loads the MoME+ expert networks to perform inference. The resulting segmentation mask is stored, and a 3D visualization model (glTF) is generated for the frontend. Simultaneously, the atlas mapping module registers the mask to the MNI152 space, computes regional overlaps, and constructs the JSON descriptor. Finally, the LLM consumes this JSON to produce a draft report, which is saved to the database.
+
+\section{SECURITY AND TRACEABILITY}
+Given the sensitive nature of medical data, the system employs Role-Based Access Control (RBAC) to enforce isolation between Clinicians, Researchers, and System Administrators. Every generated report includes a built-in traceability link: clinical assertions in the text are mapped back to specific fields in the JSON descriptor, which in turn correspond to explicit voxel coordinates from the MoME+ segmentation. This chain of custody ensures full regulatory auditability.
+
+% -------------------------------------------------------------------
+% CHAPTER 6: IMPLEMENTATION AND TESTING
+% -------------------------------------------------------------------
+\chapter{IMPLEMENTATION AND TESTING}
+
+\section{IMPLEMENTATION DETAILS}
+The frontend was developed using Vite, React 18, and TailwindCSS to ensure a responsive and modern user experience. The backend was implemented in Python 3.12 using Django 4.2. Asynchronous processing, crucial for long-running inference tasks, was handled by Celery backed by a Redis message broker.
+
+The AI modules were implemented using PyTorch 2.0. The MoME+ model used 3D U-Nets as experts, trained with Mixed Precision (AMP) to optimize memory usage on NVIDIA RTX 3080 GPUs. The atlas registration pipeline was built using \texttt{nibabel} and \texttt{scipy} for affine transformations (FLIRT algorithm) against the Harvard-Oxford structural atlas. 
+
+For the report generation, MedGemma-4B was fine-tuned using Parameter-Efficient Fine-Tuning (PEFT) and Low-Rank Adaptation (LoRA). This allowed training on consumer-grade hardware while retaining the base model's medical reasoning capabilities.
+
+\section{SYNTHETIC DATA GENERATION}
+A major challenge was the scarcity of paired segmentation-to-report training data. We developed a deterministic JSON descriptor generator that encoded tumor characteristics into a structured schema. Using this schema, we created a synthetic data generation pipeline that produced 10,000+ plausible JSON-report pairs using a template-based approach with linguistic variation, ensuring high clinical realism without exposing real patient data.
+
+\section{SYSTEM TESTING}
+The software underwent rigorous component and integration testing. Backend API endpoints were tested using Django's test framework, ensuring correct RBAC enforcement and data validation. The AI components were evaluated independently: segmentation accuracy was measured using the Dice Similarity Coefficient, while the report generation was evaluated using Natural Language Generation metrics (BLEU, ROUGE) and manual factual consistency checks by human reviewers.
+
+% -------------------------------------------------------------------
+% CHAPTER 7: RESULTS AND DISCUSSION
+% -------------------------------------------------------------------
+\chapter{RESULTS AND DISCUSSION}
+
+\section{SEGMENTATION PERFORMANCE}
+The MoME+ architecture was trained and evaluated on the BraTS 2024 Glioma dataset (1,620 cases). The independent modality experts achieved mean Dice scores of 0.7889 (T1CE), 0.7438 (T2), 0.7206 (T1), and 0.6991 (FLAIR). The T1CE expert excelled in identifying the Tumor Core and Enhancing Tumor, while the FLAIR expert performed best for the Whole Tumor region, validating the modality specialization hypothesis.
+
+Upon freezing the experts and training the hierarchical gating network, the fused MoME+ prediction achieved an overall mean Dice score of 0.8150, outperforming any individual expert and demonstrating the efficacy of learned, input-dependent fusion.
+
+\section{CONTINUAL LEARNING EVALUATION}
+To evaluate continual learning, the system was subjected to a task transition: from Glioma (Task 1) to a new Meningioma subset (Task 2) using only the T1CE modality. By utilizing EWC ($\lambda=400$) and an experience replay buffer of 2,000 crops, the T1CE expert successfully adapted to Meningioma while retaining a Glioma Dice score of 0.815. This confirmed that the network could incorporate new diagnostic capabilities without catastrophic forgetting.
+
+\section{REPORT GENERATION ACCURACY}
+The generated reports were evaluated against radiologist-authored reference reports on a held-out test set. The template-driven generation achieved a BLEU-4 score of 44.73, a ROUGE-L score of 0.653, and a METEOR score of 0.397. More importantly, manual auditing revealed a 0\% hallucination rate—every volumetric measurement, anatomical label, and clinical assertion was factually correct and fully traceable to the JSON descriptor.
+
+% -------------------------------------------------------------------
+% CHAPTER 8: CONCLUSION AND FUTURE WORK
+% -------------------------------------------------------------------
+\chapter{CONCLUSION AND FUTURE WORK}
+
+\section{CONCLUSION}
+This project successfully designed and implemented an expert-guided multimodal AI ecosystem for brain tumor segmentation and reporting. By integrating the MoME+ architecture with EWC-based continual learning, the system demonstrated robust, adaptable segmentation performance. Furthermore, the introduction of a deterministic atlas mapping pipeline and JSON-mediated text generation solved the critical issue of AI hallucination, ensuring that all generated clinical reports are fully interpretable and auditable. The resulting full-stack dashboard provides a practical blueprint for deploying autonomous, continually learning AI systems in clinical environments.
+
+\section{FUTURE WORK}
+While the current ecosystem provides a solid foundation, several avenues remain for future exploration:
+\begin{enumerate}
+    \item \textbf{Federated Learning:} Expanding the continual learning framework to support privacy-preserving federated learning across multiple medical institutions.
+    \item \textbf{Expanded Pathologies:} Validating the system on additional neurological conditions beyond Gliomas and Meningiomas, such as Ischemic Stroke (ISLES) and Alzheimer's Disease (OASIS).
+    \item \textbf{Clinical Trials:} Conducting prospective clinical trials with working radiologists to measure the system's impact on diagnostic speed and accuracy in a real-world setting.
+    \item \textbf{Advanced Visualization:} Integrating Augmented Reality (AR) or Virtual Reality (VR) interfaces for immersive 3D tumor inspection and surgical planning.
+\end{enumerate}
+
+% -------------------------------------------------------------------
+% CHAPTER 9: REFERENCES
+% -------------------------------------------------------------------
+\chapter*{REFERENCES}
+\addcontentsline{toc}{chapter}{REFERENCES}
+\bibliographystyle{IEEEtran}
+\bibliography{ICRAI_2026_references}
+
+\end{document}

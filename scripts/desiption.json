@@ -1,0 +1,26 @@
+{
+  "case_metadata": {
+    "case_id": "BraTS-GLI-18288",
+    "modality": ["T1", "T1ce", "T2", "FLAIR"],
+    "scanner": "3T MRI"
+  },
+  "segmentation_metrics": {
+    "enhancing_tumor_vol": "20.1 cm³",
+    "whole_tumor_vol": "88.1 cm³",
+    "confidence_score": 0.91
+  },
+  "anatomical_mapping": {
+    "primary_location": "Right Putamen",
+    "laterality": "Left Hemispheric",
+    "midline_shift": true,
+    "regional_involvement": [
+      { "region": "Right Putamen", "overlap": "46.0%" },
+      { "region": "Right Occipital Lobe", "overlap": "29.5%" }
+    ]
+  },
+  "model_context": {
+    "architecture": "MoME+",
+    "inference_latency": "4.03s",
+    "cuda_optimized": true
+  }
+}
