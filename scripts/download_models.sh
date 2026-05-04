@@ -24,7 +24,7 @@ error()   { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 # ── Ensure gdown is available ─────────────────────────────────────────────────
 if ! command -v gdown &>/dev/null; then
     info "Installing gdown..."
-    pip install -q gdown
+    pip install -q gdown --break-system-packages
 fi
 
 # ── Google Drive File IDs ─────────────────────────────────────────────────────
