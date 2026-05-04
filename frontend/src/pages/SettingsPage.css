@@ -7,6 +7,7 @@
     grid-template-columns: 1fr;
     gap: var(--spacing-xl);
     max-width: 900px;
+    margin: 0 auto;
 }
 
 .settings-form {

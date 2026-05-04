@@ -24,7 +24,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         const base = [
             { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
             { name: 'Cases', href: '/cases', icon: FolderOpen, roles: ['doctor', 'radiologist', 'researcher', 'admin'] },
-            { name: 'My Cases', href: '/cases', icon: FolderOpen, roles: ['patient'] },
             { name: 'Reports', href: '/reports', icon: FileText, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
             { name: 'Settings', href: '/settings', icon: Settings, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
             { name: 'Admin Panel', href: '/admin', icon: ShieldCheck, roles: ['admin'] },

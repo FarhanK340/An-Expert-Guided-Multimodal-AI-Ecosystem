@@ -282,40 +282,47 @@ export default function SettingsPage() {
                                         <Stethoscope size={18} className="input-icon" />
                                         <select
                                             value={profile.role}
-                                            onChange={(e) => setProfile({ ...profile, role: e.target.value })}
+                                            disabled
                                             className="input-with-icon"
+                                            style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
                                         >
                                             <option value="doctor">Doctor</option>
                                             <option value="radiologist">Radiologist</option>
                                             <option value="researcher">Researcher</option>
+                                            <option value="patient">Patient</option>
+                                            <option value="admin">Administrator</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                <div className="form-group">
-                                    <label className="form-label">Specialty</label>
-                                    <input
-                                        type="text"
-                                        value={profile.specialty}
-                                        onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
-                                        placeholder="e.g., Neurology"
-                                    />
-                                </div>
+                                {profile.role !== 'patient' && (
+                                    <div className="form-group">
+                                        <label className="form-label">Specialty</label>
+                                        <input
+                                            type="text"
+                                            value={profile.specialty}
+                                            onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
+                                            placeholder="e.g., Neurology"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Institution</label>
-                                <div className="input-wrapper">
-                                    <Building2 size={18} className="input-icon" />
-                                    <input
-                                        type="text"
-                                        value={profile.institution}
-                                        onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
-                                        className="input-with-icon"
-                                        placeholder="e.g., City Hospital"
-                                    />
+                            {profile.role !== 'patient' && (
+                                <div className="form-group">
+                                    <label className="form-label">Institution</label>
+                                    <div className="input-wrapper">
+                                        <Building2 size={18} className="input-icon" />
+                                        <input
+                                            type="text"
+                                            value={profile.institution}
+                                            onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
+                                            className="input-with-icon"
+                                            placeholder="e.g., City Hospital"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             <button
                                 type="submit"
