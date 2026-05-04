@@ -19,7 +19,20 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
+# Detect if running on Hugging Face Spaces
+IS_HF_SPACE = config('HF_SPACE', default=False, cast=bool)
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+if IS_HF_SPACE:
+    # Allow all Hugging Face subdomains
+    ALLOWED_HOSTS.append('.hf.space')
+    ALLOWED_HOSTS.append('0.0.0.0')
+
+# CSRF Settings for HF
+if IS_HF_SPACE:
+    CSRF_TRUSTED_ORIGINS = ['https://*.hf.space']
+else:
+    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -79,14 +92,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'medical_ai_backend.wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        config('DATABASE_URL', default='sqlite:///db.sqlite3'),
-        conn_max_age=600
-    )
-}
+if IS_HF_SPACE:
+    # Use SQLite for Hugging Face Spaces (single container limit)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=config('DATABASE_URL', default=f"postgresql://{config('DB_USER', default='postgres')}:{config('DB_PASSWORD', default='postgres')}@{config('DB_HOST', default='db')}:{config('DB_PORT', default='5432')}/{config('DB_NAME', default='medical_ai_db')}")
+        )
+    }
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
@@ -234,25 +255,31 @@ CELERY_TASK_TIME_LIMIT = config('INFERENCE_TIMEOUT', default=300, cast=int)
 CELERY_RESULT_BACKEND_DB = 'django-db'
 
 # Cache Configuration
-# django-redis is used when Redis is available; falls back to LocMemCache for
-# local dev without Docker.
-try:
-    import django_redis  # noqa: F401
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
-        }
-    }
-except ImportError:
+if IS_HF_SPACE:
+    # Use Local Memory Cache for Hugging Face
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
     }
+else:
+    try:
+        import django_redis  # noqa: F401
+        CACHES = {
+            'default': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': config('REDIS_URL', default='redis://localhost:6379/1'),
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                }
+            }
+        }
+    except ImportError:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            }
+        }
 
 #Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

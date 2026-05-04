@@ -32,19 +32,19 @@ fi
 # Example URL: https://drive.google.com/file/d/1A2B3C4D5E6F/view?usp=sharing
 #              → File ID = 1A2B3C4D5E6F
 
-EXPERT_T1_ID="<FILE_ID_expert_T1_best>"
-EXPERT_T1CE_ID="<FILE_ID_expert_T1ce_best>"
-EXPERT_T2_ID="<FILE_ID_expert_T2_best>"
-EXPERT_FLAIR_ID="<FILE_ID_expert_FLAIR_best>"
-MOME_FUSION_ID="<FILE_ID_mome_fusion_best>"
+EXPERT_T1_ID="1zjgJA2T-ubh7FdYu0vQsQHSt7QCeEZRs"
+EXPERT_T1CE_ID="145uckiI0PjX5CciDl-fHjbRnW_G0oO0n"
+EXPERT_T2_ID="1CJKplGT-j4-gG2PVR6PGGzraG_OpElW4"
+EXPERT_FLAIR_ID="1QTWSpfolU3DEMhtScIeCs5-JnVpl8g2e"
+MOME_FUSION_ID="16knEN0uDXUD-xtD54pbvJf6FiKh0MQzp"
 
 # LLM LoRA adapter files
-LLM_ADAPTER_CONFIG_ID="<FILE_ID_adapter_config_json>"
-LLM_ADAPTER_WEIGHTS_ID="<FILE_ID_adapter_model_safetensors>"
-LLM_TOKENIZER_ID="<FILE_ID_tokenizer_json>"
-LLM_TOKENIZER_CONFIG_ID="<FILE_ID_tokenizer_config_json>"
-LLM_CHAT_TEMPLATE_ID="<FILE_ID_chat_template_jinja>"
-LLM_TRAINING_ARGS_ID="<FILE_ID_training_args_bin>"
+LLM_ADAPTER_CONFIG_ID="1JC-nJVmUiVkpaw75I-4Z_EJM2pjPRQAq"
+LLM_ADAPTER_WEIGHTS_ID="11xi-jgruPqN8D39o7rJbvmn8B1dSTvzM"
+LLM_TOKENIZER_ID="1MlU-Hqx9SqQdkPtK1Rk-41vOGuoyDtCx"
+LLM_TOKENIZER_CONFIG_ID="1U7s3zDPLI2_DMHWRG7dxiPIFq9Vr9JPC"
+LLM_CHAT_TEMPLATE_ID="1P-D1975a6aebMncWFWCZpKGol1-doZCw"
+LLM_TRAINING_ARGS_ID="13rZrdSG3t4uvmJ7TkgRIZB24jXh8hWMA"
 
 # ── Create target directories ─────────────────────────────────────────────────
 info "Creating model directories..."

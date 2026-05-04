@@ -1,0 +1,94 @@
+# =============================================================================
+# Dockerfile.hf — Hugging Face Spaces Edition
+#
+# This Dockerfile combines the Frontend and Backend into a single container.
+# It uses SQLite for database and local memory for caching to satisfy the
+# single-container constraint of Hugging Face Spaces.
+# =============================================================================
+
+# ── Stage 1: Build Frontend ──────────────────────────────────────────────────
+FROM node:18-alpine AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ .
+# In HF, the API is served on the same domain/port
+ENV VITE_API_URL=/api/v1
+RUN npm run build
+
+# ── Stage 2: Final Monolith ──────────────────────────────────────────────────
+FROM python:3.12-slim
+
+# HF Spaces requires running as user 1000
+RUN useradd -m -u 1000 user
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc g++ libpq-dev git wget nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt gunicorn whitenoise
+
+# Copy backend code
+COPY backend/ .
+# Copy ML source code
+COPY src/ /app/src/
+# Copy model weights (Note: You'll need to use the download script or Git LFS)
+COPY models/ /app/models/
+
+# Copy frontend build from Stage 1
+COPY --from=frontend-builder /frontend/dist /app/frontend_dist
+
+# Set environment variables for HF
+ENV PORT=7860
+ENV PYTHONUNBUFFERED=1
+ENV DEBUG=False
+ENV DATABASE_URL=sqlite:///db.sqlite3
+ENV USE_CLOUD_STORAGE=False
+ENV HF_SPACE=True
+
+# Configure Nginx to serve Frontend and proxy Backend
+RUN echo 'server { \
+    listen 7860; \
+    location / { \
+        root /app/frontend_dist; \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://localhost:8000; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+    } \
+    location /admin/ { \
+        proxy_pass http://localhost:8000; \
+    } \
+    location /static/ { \
+        alias /app/staticfiles/; \
+    } \
+    location /media/ { \
+        alias /app/media/; \
+    } \
+}' > /etc/nginx/sites-available/default
+
+# Create necessary directories and set permissions
+RUN mkdir -p /app/media /app/staticfiles /app/logs /app/models/checkpoints/experts \
+    && chown -R user:user /app /etc/nginx /var/log/nginx /var/lib/nginx
+
+USER user
+
+# Entrypoint script to run migrations and start both Nginx and Gunicorn
+RUN echo '#!/bin/bash\n\
+python manage.py migrate\n\
+python manage.py collectstatic --noinput\n\
+# Start Gunicorn in the background\n\
+gunicorn medical_ai_backend.wsgi:application --bind 0.0.0.0:8000 --workers 2 &\n\
+# Start Nginx in the foreground\n\
+/usr/sbin/nginx -g "daemon off;"' > /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
+
+EXPOSE 7860
+
+CMD ["/app/entrypoint.sh"]
