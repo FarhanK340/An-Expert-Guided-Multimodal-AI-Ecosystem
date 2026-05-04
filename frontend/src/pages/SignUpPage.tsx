@@ -130,7 +130,6 @@ export default function SignUpPage() {
                                         className="input-with-icon"
                                     >
                                         <option value="doctor">Doctor</option>
-                                        <option value="radiologist">Radiologist</option>
                                         <option value="researcher">Researcher</option>
                                         <option value="patient">Patient</option>
                                     </select>

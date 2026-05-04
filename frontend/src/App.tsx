@@ -28,8 +28,8 @@ function Layout({ children, allowedRoles }: { children: React.ReactNode; allowed
   );
 }
 
-const CLINICIAN = ['doctor', 'radiologist', 'researcher', 'admin'];
-const ALL_ROLES = ['doctor', 'radiologist', 'researcher', 'patient', 'admin'];
+const CLINICIAN = ['doctor', 'researcher', 'admin'];
+const ALL_ROLES = ['doctor', 'researcher', 'patient', 'admin'];
 const ADMIN_ONLY = ['admin'];
 
 function App() {

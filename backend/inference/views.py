@@ -235,6 +235,13 @@ class UploadGroundTruthView(APIView):
                 {'error': 'Permission denied'},
                 status=status.HTTP_403_FORBIDDEN
             )
+            
+        # Check role permission (only researchers and admins)
+        if getattr(request.user, 'role', None) != 'researcher' and not request.user.is_staff:
+            return Response(
+                {'error': 'Permission denied. Only researchers can upload ground truth masks.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         # Check if file was uploaded
         if 'file' not in request.FILES:

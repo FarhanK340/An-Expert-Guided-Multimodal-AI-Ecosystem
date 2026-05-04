@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 isAuthenticated: !!user,
                 isLoading,
-                isDoctor: user?.role === 'doctor' || user?.role === 'radiologist' || user?.role === 'researcher',
+                isDoctor: user?.role === 'doctor' || user?.role === 'researcher',
                 isPatient: user?.role === 'patient',
                 isAdmin: user?.role === 'admin',
                 login,

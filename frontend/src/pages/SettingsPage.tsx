@@ -125,7 +125,7 @@ export default function SettingsPage() {
             // Update user in context (cast role to proper type)
             await updateUser({
                 ...profile,
-                role: profile.role as 'doctor' | 'radiologist' | 'researcher' | 'admin',
+                role: profile.role as 'doctor' | 'researcher' | 'admin',
             });
 
             success('Profile updated successfully!');
@@ -319,7 +319,6 @@ export default function SettingsPage() {
                                             style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
                                         >
                                             <option value="doctor">Doctor</option>
-                                            <option value="radiologist">Radiologist</option>
                                             <option value="researcher">Researcher</option>
                                             <option value="patient">Patient</option>
                                             <option value="admin">Administrator</option>

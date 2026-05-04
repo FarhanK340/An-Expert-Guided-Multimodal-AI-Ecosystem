@@ -5,7 +5,9 @@ Implements the full pipeline: structured_findings → JSON descriptor → LLM �
 
 import json
 import io
+import re
 from datetime import datetime
+from django.utils.html import escape
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -308,14 +310,27 @@ class ExportPDFView(APIView):
         # Report narrative
         story.append(Paragraph("Radiological Report", styles['Heading2']))
         report_text = report.finalized_text or report.ai_generated_text or ''
+        
         for paragraph in report_text.split('\n\n'):
             paragraph = paragraph.strip()
-            if paragraph:
-                if paragraph.startswith('**') and paragraph.endswith('**'):
-                    story.append(Paragraph(paragraph.strip('*'), styles['Heading3']))
-                else:
-                    story.append(Paragraph(paragraph.replace('\n', '<br/>'), styles['Normal']))
-                story.append(Spacer(1, 0.2*cm))
+            if not paragraph:
+                continue
+                
+            # Handle headers: **Header Text** on its own line
+            if paragraph.startswith('**') and paragraph.endswith('**') and len(paragraph) > 4:
+                header_text = paragraph[2:-2].strip()
+                story.append(Paragraph(escape(header_text), styles['Heading3']))
+            else:
+                # Escape HTML special chars to prevent reportlab XML errors
+                processed_text = escape(paragraph)
+                # Convert markdown bold: **text** -> <b>text</b>
+                processed_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', processed_text)
+                # Convert markdown italic: *text* -> <i>text</i>
+                processed_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', processed_text)
+                
+                story.append(Paragraph(processed_text.replace('\n', '<br/>'), styles['Normal']))
+            
+            story.append(Spacer(1, 0.2*cm))
 
         doc.build(story)
         return buffer.getvalue()

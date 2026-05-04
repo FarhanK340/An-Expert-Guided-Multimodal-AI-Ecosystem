@@ -3,14 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Download, Eye, BarChart3, FileText, Loader2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import MRIViewer from '../components/MRIViewer';
 import './ResultsPage.css';
 
 export default function ResultsPage() {
+    const { user } = useAuth();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { error: showError, success } = useNotification();
 
+    const isResearcher = user?.role === 'researcher' || user?.role === 'admin';
     const [caseData, setCaseData] = useState<any>(null);
     const [resultData, setResultData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -301,7 +304,7 @@ export default function ResultsPage() {
                     </div>
                 )}
                 {/* Ground Truth 2D Slice Visualizations Card */}
-                {resultData.gt_slice_images && resultData.gt_slice_images.length > 0 && (
+                {isResearcher && resultData.gt_slice_images && resultData.gt_slice_images.length > 0 && (
                     <div className="card" style={{ gridColumn: '1 / -1' }}>
                         <div className="card-header">
                             <h3>
@@ -344,39 +347,58 @@ export default function ResultsPage() {
                 )}
                 
                 {/* Ground Truth Upload Card */}
-                <div className="card">
-                    <div className="card-header">
-                        <h3>Ground Truth Comparison</h3>
-                    </div>
-                    <div className="card-body">
-                        {hasGroundTruth ? (
-                            <div className="ground-truth-info">
-                                <div className="success-message">
-                                    ✓ Ground truth mask uploaded
+                {isResearcher && (
+                    <div className="card">
+                        <div className="card-header">
+                            <h3>Ground Truth Comparison</h3>
+                        </div>
+                        <div className="card-body">
+                            {hasGroundTruth ? (
+                                <div className="ground-truth-info">
+                                    <div className="success-message">
+                                        ✓ Ground truth mask uploaded
+                                    </div>
+                                    <div className="upload-actions" style={{ gap: '0.75rem', marginTop: '1rem' }}>
+                                        {groundTruthUrl && (
+                                            <>
+                                                <button
+                                                    className="btn btn-primary btn-sm"
+                                                    onClick={() => setViewerImage({ url: groundTruthUrl, modality: 'Ground Truth' })}
+                                                >
+                                                    <Eye size={16} />
+                                                    View 3D
+                                                </button>
+                                                <a
+                                                    href={groundTruthUrl}
+                                                    download
+                                                    className="btn btn-outline btn-sm"
+                                                >
+                                                    <Download size={16} />
+                                                    Download
+                                                </a>
+                                            </>
+                                        )}
+                                        <label className="btn btn-outline btn-sm">
+                                            <Upload size={16} />
+                                            Replace
+                                            <input
+                                                type="file"
+                                                accept=".nii,.nii.gz"
+                                                onChange={handleGroundTruthUpload}
+                                                disabled={isUploadingGT}
+                                                style={{ display: 'none' }}
+                                            />
+                                        </label>
+                                    </div>
                                 </div>
-                                <div className="upload-actions" style={{ gap: '0.75rem', marginTop: '1rem' }}>
-                                    {groundTruthUrl && (
-                                        <>
-                                            <button
-                                                className="btn btn-primary btn-sm"
-                                                onClick={() => setViewerImage({ url: groundTruthUrl, modality: 'Ground Truth' })}
-                                            >
-                                                <Eye size={16} />
-                                                View 3D
-                                            </button>
-                                            <a
-                                                href={groundTruthUrl}
-                                                download
-                                                className="btn btn-outline btn-sm"
-                                            >
-                                                <Download size={16} />
-                                                Download
-                                            </a>
-                                        </>
-                                    )}
-                                    <label className="btn btn-outline btn-sm">
-                                        <Upload size={16} />
-                                        Replace
+                            ) : (
+                                <div className="upload-section">
+                                    <p className="info-text">
+                                        Upload a ground truth segmentation mask to compare with the predicted results.
+                                    </p>
+                                    <label className="btn btn-primary upload-btn">
+                                        <Upload size={18} />
+                                        {isUploadingGT ? 'Uploading...' : 'Upload Ground Truth (.nii/.nii.gz)'}
                                         <input
                                             type="file"
                                             accept=".nii,.nii.gz"
@@ -386,74 +408,55 @@ export default function ResultsPage() {
                                         />
                                     </label>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="upload-section">
-                                <p className="info-text">
-                                    Upload a ground truth segmentation mask to compare with the predicted results.
-                                </p>
-                                <label className="btn btn-primary upload-btn">
-                                    <Upload size={18} />
-                                    {isUploadingGT ? 'Uploading...' : 'Upload Ground Truth (.nii/.nii.gz)'}
-                                    <input
-                                        type="file"
-                                        accept=".nii,.nii.gz"
-                                        onChange={handleGroundTruthUpload}
-                                        disabled={isUploadingGT}
-                                        style={{ display: 'none' }}
-                                    />
-                                </label>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Voxel Difference Comparison Card */}
-                {
-                    resultData.structured_findings?.ground_truth_comparison && (
-                        <div className="card">
-                            <div className="card-header">
-                                <h3>Voxel Difference Comparison</h3>
-                            </div>
-                            <div className="card-body">
-                                <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1rem' }}>
-                                    Direct comparison between the model's prediction and the uploaded ground truth mask.
-                                </p>
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                        <thead>
-                                            <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
-                                                <th style={{ padding: '0.75rem' }}>Region</th>
-                                                <th style={{ padding: '0.75rem' }}>Dice Score (DSC)</th>
-                                                <th style={{ padding: '0.75rem' }}>IoU</th>
-                                                <th style={{ padding: '0.75rem' }}>GT Volume</th>
-                                                <th style={{ padding: '0.75rem' }}>Pred Volume</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {['whole_tumor', 'tumor_core', 'enhancing_tumor'].map((region) => {
-                                                const comp = resultData.structured_findings.ground_truth_comparison[region];
-                                                if (!comp) return null;
-                                                const label = region.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                                                return (
-                                                    <tr key={region} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                                        <td style={{ padding: '0.75rem', fontWeight: 600 }}>{label}</td>
-                                                        <td style={{ padding: '0.75rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                                                            {(comp.dice * 100).toFixed(2)}%
-                                                        </td>
-                                                        <td style={{ padding: '0.75rem' }}>{(comp.iou * 100).toFixed(2)}%</td>
-                                                        <td style={{ padding: '0.75rem' }}>{formatVolume(comp.gt_volume)}</td>
-                                                        <td style={{ padding: '0.75rem' }}>{formatVolume(comp.pred_volume)}</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
+                {isResearcher && resultData.structured_findings?.ground_truth_comparison && (
+                    <div className="card">
+                        <div className="card-header">
+                            <h3>Voxel Difference Comparison</h3>
+                        </div>
+                        <div className="card-body">
+                            <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1rem' }}>
+                                Direct comparison between the model's prediction and the uploaded ground truth mask.
+                            </p>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
+                                            <th style={{ padding: '0.75rem' }}>Region</th>
+                                            <th style={{ padding: '0.75rem' }}>Dice Score (DSC)</th>
+                                            <th style={{ padding: '0.75rem' }}>IoU</th>
+                                            <th style={{ padding: '0.75rem' }}>GT Volume</th>
+                                            <th style={{ padding: '0.75rem' }}>Pred Volume</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {['whole_tumor', 'tumor_core', 'enhancing_tumor'].map((region) => {
+                                            const comp = resultData.structured_findings.ground_truth_comparison[region];
+                                            if (!comp) return null;
+                                            const label = region.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                            return (
+                                                <tr key={region} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                    <td style={{ padding: '0.75rem', fontWeight: 600 }}>{label}</td>
+                                                    <td style={{ padding: '0.75rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                                                        {(comp.dice * 100).toFixed(2)}%
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem' }}>{(comp.iou * 100).toFixed(2)}%</td>
+                                                    <td style={{ padding: '0.75rem' }}>{formatVolume(comp.gt_volume)}</td>
+                                                    <td style={{ padding: '0.75rem' }}>{formatVolume(comp.pred_volume)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    )
-                }
+                    </div>
+                )}
 
                 {/* Detailed JSON Descriptor Card */}
                 {

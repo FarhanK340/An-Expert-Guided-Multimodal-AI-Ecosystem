@@ -22,10 +22,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     // Navigation items filtered by role
     const getNavItems = () => {
         const base = [
-            { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
-            { name: 'Cases', href: '/cases', icon: FolderOpen, roles: ['doctor', 'radiologist', 'researcher', 'admin'] },
-            { name: 'Reports', href: '/reports', icon: FileText, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
-            { name: 'Settings', href: '/settings', icon: Settings, roles: ['doctor', 'radiologist', 'researcher', 'patient', 'admin'] },
+            { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['doctor', 'researcher', 'patient', 'admin'] },
+            { name: 'Cases', href: '/cases', icon: FolderOpen, roles: ['doctor', 'researcher', 'admin'] },
+            { name: 'Reports', href: '/reports', icon: FileText, roles: ['doctor', 'researcher', 'patient', 'admin'] },
+            { name: 'Settings', href: '/settings', icon: Settings, roles: ['doctor', 'researcher', 'patient', 'admin'] },
             { name: 'Admin Panel', href: '/admin', icon: ShieldCheck, roles: ['admin'] },
         ];
 
@@ -45,7 +45,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         if (!user) return 'User';
         const roleMap: Record<string, string> = {
             doctor: 'Doctor',
-            radiologist: 'Radiologist',
             researcher: 'Researcher',
             patient: 'Patient',
             admin: 'Administrator',
