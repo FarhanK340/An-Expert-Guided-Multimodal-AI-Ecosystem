@@ -100,6 +100,11 @@ class ReportListView(APIView):
     def get(self, request):
         if request.user.role == 'admin' or request.user.is_staff:
             reports = Report.objects.all().order_by('-generated_at')
+        elif request.user.role == 'patient':
+            # Show finalized/reviewed reports for cases linked to this patient
+            reports = Report.objects.filter(
+                case__patient_user=request.user
+            ).exclude(status='draft').order_by('-generated_at')
         else:
             # Show reports for cases created by this user
             reports = Report.objects.filter(
@@ -120,9 +125,14 @@ class ReportDetailView(APIView):
         except Report.DoesNotExist:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if (report.case.created_by != request.user
-                and not request.user.is_staff):
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.is_staff or request.user.role == 'admin':
+            pass
+        elif request.user.role == 'patient':
+            if report.case.patient_user != request.user or report.status == 'draft':
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            if report.case.created_by != request.user:
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ReportSerializer(report)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -188,8 +198,14 @@ class ExportPDFView(APIView):
         except Report.DoesNotExist:
             return Response({'error': 'Report not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if report.case.created_by != request.user and not request.user.is_staff:
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.is_staff or request.user.role == 'admin':
+            pass
+        elif request.user.role == 'patient':
+            if report.case.patient_user != request.user or report.status == 'draft':
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            if report.case.created_by != request.user:
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             pdf_bytes = self._generate_pdf(report)
